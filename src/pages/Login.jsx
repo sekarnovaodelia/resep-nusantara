@@ -1,8 +1,47 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
 
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        console.log('🔵 Login started');
+        setLoading(true);
+        setError('');
+
+        try {
+            // Convert username to temporary email format
+            const tempEmail = `${username}@resepnusantara.local`;
+            console.log('🔵 Temp email:', tempEmail);
+
+            console.log('🔵 Calling supabase.auth.signInWithPassword...');
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: tempEmail,
+                password: password,
+            });
+
+            console.log('🔵 Login response:', { data, error });
+
+            if (error) throw error;
+
+            console.log('🔵 Login successful, navigating to /');
+            // Navigate to home page on successful login
+            navigate('/');
+        } catch (error) {
+            console.error('🔴 Login error:', error);
+            setError(error.message || 'Terjadi kesalahan saat login');
+        } finally {
+            console.log('🔵 Login finally block, setting loading to false');
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="flex min-h-screen w-full flex-row overflow-hidden bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark font-display transition-colors duration-200">
@@ -48,20 +87,30 @@ const Login = () => {
                         </p>
                     </div>
 
+                    {/* Error Message */}
+                    {error && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
+                            {error}
+                        </div>
+                    )}
+
                     {/* Form Fields */}
-                    <form action="#" className="flex flex-col gap-5" method="POST" onSubmit={(e) => e.preventDefault()}>
-                        {/* Email / Username */}
+                    <form onSubmit={handleLogin} className="flex flex-col gap-5">
+                        {/* Username */}
                         <div className="flex flex-col gap-2">
-                            <label className="text-text-main-light dark:text-text-main-dark text-sm font-bold leading-normal ml-1" htmlFor="email">
-                                Email atau Username
+                            <label className="text-text-main-light dark:text-text-main-dark text-sm font-bold leading-normal ml-1" htmlFor="username">
+                                Username
                             </label>
                             <div className="relative flex items-center group">
                                 <span className="material-symbols-outlined absolute left-4 text-text-sub-light dark:text-text-sub-dark transition-colors group-focus-within:text-primary z-10">person</span>
                                 <input
                                     className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-text-main-light dark:text-text-main-dark placeholder:text-text-sub-light/70 dark:placeholder:text-text-sub-dark/50 focus:outline-0 focus:ring-4 focus:ring-primary/20 border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark h-14 pl-12 pr-4 text-base font-normal leading-normal transition-all duration-200 hover:border-primary/50 focus:border-primary group-hover:shadow-sm"
-                                    id="email"
-                                    placeholder="Masukkan email atau username"
+                                    id="username"
+                                    placeholder="Masukkan username Anda"
                                     type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                                    required
                                 />
                             </div>
                         </div>
@@ -72,9 +121,6 @@ const Login = () => {
                                 <label className="text-text-main-light dark:text-text-main-dark text-sm font-bold leading-normal" htmlFor="password">
                                     Kata Sandi
                                 </label>
-                                <a className="text-primary text-sm font-bold hover:text-orange-700 transition-colors underline-offset-4 hover:underline" href="#">
-                                    Lupa Password?
-                                </a>
                             </div>
                             <div className="relative flex items-center group">
                                 <span className="material-symbols-outlined absolute left-4 text-text-sub-light dark:text-text-sub-dark transition-colors group-focus-within:text-primary z-10">lock</span>
@@ -83,6 +129,9 @@ const Login = () => {
                                     id="password"
                                     placeholder="Masukkan kata sandi"
                                     type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
                                 />
                                 <button
                                     className="absolute right-4 text-text-sub-light dark:text-text-sub-dark hover:text-primary transition-colors flex items-center justify-center focus:outline-none p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#3e3228]"
@@ -97,29 +146,14 @@ const Login = () => {
                         </div>
 
                         {/* Primary Action */}
-                        <button className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-[#d55f0e] active:bg-[#bd520a] active:scale-[0.98] text-white text-base font-bold leading-normal tracking-[0.015em] transition-all duration-200 shadow-md shadow-orange-500/20 hover:shadow-lg hover:shadow-orange-500/30 mt-2">
-                            <span className="truncate">Masuk</span>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-[#d55f0e] active:bg-[#bd520a] active:scale-[0.98] text-white text-base font-bold leading-normal tracking-[0.015em] transition-all duration-200 shadow-md shadow-orange-500/20 hover:shadow-lg hover:shadow-orange-500/30 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span className="truncate">{loading ? 'Memproses...' : 'Masuk'}</span>
                         </button>
                     </form>
-
-                    {/* Divider */}
-                    <div className="relative flex py-1 items-center">
-                        <div className="flex-grow border-t border-border-light dark:border-border-dark"></div>
-                        <span className="flex-shrink-0 mx-4 text-text-sub-light dark:text-text-sub-dark text-sm font-medium">Atau masuk dengan</span>
-                        <div className="flex-grow border-t border-border-light dark:border-border-dark"></div>
-                    </div>
-
-                    {/* Social Login */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <button className="flex items-center justify-center gap-2 h-12 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark hover:bg-gray-50 dark:hover:bg-surface-dark/80 active:scale-[0.98] transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm text-text-main-light dark:text-text-main-dark font-semibold text-sm">
-                            <img alt="Google Logo" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSENPSDT52DnhPZKfQoXEPqwFVHjlFfi_L6s4Me-rctumUzRaDbK4FPOBhLuNTCLHEY-9DkPgGgIWBnZsDr7fCQqQZgQJkh-60pNnPfCt4BrosQszqAPK0RSjITtpKeai4ohVK3txOF4OreyBJBRXWRFdqkmGf8NGh1w6a7h1lZaQnYFhkSTt4fV4_6IBn8MlBBGb8-NmxAtkIFgUxZjBDD_gpGZZyhLafwSsUgzmigcOtvFjFTA2K3qrixWb80U6uYetSD7AOG0j0" />
-                            <span>Google</span>
-                        </button>
-                        <button className="flex items-center justify-center gap-2 h-12 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark hover:bg-gray-50 dark:hover:bg-surface-dark/80 active:scale-[0.98] transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm text-text-main-light dark:text-text-main-dark font-semibold text-sm">
-                            <img alt="Facebook Logo" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQCB0RK5OPb4YvkhApVGS-PmdmUCzursQRxCZp6FM-46RkMSSxB4HIGn0aFf-SV5Qfj3_05NXItdV_uK3B2RtEB5eg3QY9SWq7FP1EeOdWueE7PYlVHlkyte-5AzRjlDfkd9EkVOM-G57_bIb_Y3bommRUVAVRIt7NGfoAN4AguZLhoTPUhyasCj2dtX3MA4FFCbbAGVJGxGusTPee26CU91EyD2O1lfg7eTdikdgujtTTb7z7mHf4ngIQaMRv1BGu70DGej2PG27J" />
-                            <span>Facebook</span>
-                        </button>
-                    </div>
 
                     {/* Footer CTA */}
                     <div className="text-center pt-2">
@@ -140,3 +174,4 @@ const Login = () => {
 };
 
 export default Login;
+

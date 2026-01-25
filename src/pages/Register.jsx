@@ -1,8 +1,78 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
 
 const Register = () => {
     const [showPassword, setShowPassword] = useState(false);
+    const [fullName, setFullName] = useState('');
+    const [username, setUsername] = useState('');
+    const [location, setLocation] = useState('');
+    const [avatar, setAvatar] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(null);
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
+
+    const handleAvatarChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setAvatar(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        console.log('🔵 Register started');
+        setLoading(true);
+        setError('');
+
+        try {
+            // Create a temporary email from username for Supabase auth
+            const tempEmail = `${username}@resepnusantara.local`;
+            console.log('🔵 Temp email:', tempEmail);
+
+            console.log('🔵 Calling supabase.auth.signUp...');
+            const { data, error } = await supabase.auth.signUp({
+                email: tempEmail,
+                password: password,
+                options: {
+                    data: {
+                        username: username,
+                        full_name: fullName,
+                        location: location,
+                    },
+                },
+            });
+
+            console.log('🔵 SignUp response:', { data, error });
+
+            if (error) throw error;
+
+            console.log('🔵 Registration successful, showing alert');
+            // Show success message and navigate to login
+            alert('Pendaftaran berhasil! Silakan login dengan username Anda.');
+            console.log('🔵 Navigating to /login');
+            navigate('/login');
+        } catch (error) {
+            console.error('🔴 Register error:', error);
+            if (error?.code === '23505' || error?.message?.includes('already registered')) {
+                // duplicate key value violates unique constraint or user already exists
+                alert("Username sudah dipakai");
+                setError("Username sudah dipakai");
+            } else {
+                setError(error.message || 'Terjadi kesalahan saat mendaftar');
+            }
+        } finally {
+            console.log('🔵 Register finally block, setting loading to false');
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="flex min-h-screen w-full flex-row overflow-hidden bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark font-display transition-colors duration-200">
@@ -48,8 +118,15 @@ const Register = () => {
                         </p>
                     </div>
 
+                    {/* Error Message */}
+                    {error && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
+                            {error}
+                        </div>
+                    )}
+
                     {/* Form Fields */}
-                    <form action="#" className="flex flex-col gap-5" method="POST" onSubmit={(e) => e.preventDefault()}>
+                    <form onSubmit={handleRegister} className="flex flex-col gap-5">
                         {/* Full Name */}
                         <div className="flex flex-col gap-2">
                             <label className="text-text-main-light dark:text-text-main-dark text-sm font-bold leading-normal ml-1" htmlFor="fullname">
@@ -62,22 +139,48 @@ const Register = () => {
                                     id="fullname"
                                     placeholder="Masukkan nama lengkap Anda"
                                     type="text"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    required
                                 />
                             </div>
                         </div>
-
-                        {/* Email */}
+                        {/* Username */}
                         <div className="flex flex-col gap-2">
-                            <label className="text-text-main-light dark:text-text-main-dark text-sm font-bold leading-normal ml-1" htmlFor="email">
-                                Alamat Email
+                            <label className="text-text-main-light dark:text-text-main-dark text-sm font-bold leading-normal ml-1" htmlFor="username">
+                                Username
                             </label>
                             <div className="relative flex items-center group">
-                                <span className="material-symbols-outlined absolute left-4 text-text-sub-light dark:text-text-sub-dark transition-colors group-focus-within:text-primary z-10">mail</span>
+                                <span className="material-symbols-outlined absolute left-4 text-text-sub-light dark:text-text-sub-dark transition-colors group-focus-within:text-primary z-10">person</span>
                                 <input
                                     className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-text-main-light dark:text-text-main-dark placeholder:text-text-sub-light/70 dark:placeholder:text-text-sub-dark/50 focus:outline-0 focus:ring-4 focus:ring-primary/20 border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark h-14 pl-12 pr-4 text-base font-normal leading-normal transition-all duration-200 hover:border-primary/50 focus:border-primary group-hover:shadow-sm"
-                                    id="email"
-                                    placeholder="contoh@email.com"
-                                    type="email"
+                                    id="username"
+                                    placeholder="Pilih username unik Anda"
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                                    required
+                                    minLength={3}
+                                    maxLength={20}
+                                />
+                            </div>
+                            <p className="text-xs text-text-secondary dark:text-gray-400 ml-1">Username hanya boleh huruf kecil, angka, dan underscore</p>
+                        </div>
+
+                        {/* Location */}
+                        <div className="flex flex-col gap-2">
+                            <label className="text-text-main-light dark:text-text-main-dark text-sm font-bold leading-normal ml-1" htmlFor="location">
+                                Lokasi
+                            </label>
+                            <div className="relative flex items-center group">
+                                <span className="material-symbols-outlined absolute left-4 text-text-sub-light dark:text-text-sub-dark transition-colors group-focus-within:text-primary z-10">location_on</span>
+                                <input
+                                    className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-text-main-light dark:text-text-main-dark placeholder:text-text-sub-light/70 dark:placeholder:text-text-sub-dark/50 focus:outline-0 focus:ring-4 focus:ring-primary/20 border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark h-14 pl-12 pr-4 text-base font-normal leading-normal transition-all duration-200 hover:border-primary/50 focus:border-primary group-hover:shadow-sm"
+                                    id="location"
+                                    placeholder="Contoh: Jakarta, Indonesia"
+                                    type="text"
+                                    value={location}
+                                    onChange={(e) => setLocation(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -96,6 +199,10 @@ const Register = () => {
                                     id="password"
                                     placeholder="Buat kata sandi minimal 8 karakter"
                                     type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    minLength={8}
                                 />
                                 <button
                                     className="absolute right-4 text-text-sub-light dark:text-text-sub-dark hover:text-primary transition-colors flex items-center justify-center focus:outline-none p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#3e3228]"
@@ -110,29 +217,14 @@ const Register = () => {
                         </div>
 
                         {/* Primary Action */}
-                        <button className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-[#d55f0e] active:bg-[#bd520a] active:scale-[0.98] text-white text-base font-bold leading-normal tracking-[0.015em] transition-all duration-200 shadow-md shadow-orange-500/20 hover:shadow-lg hover:shadow-orange-500/30 mt-2">
-                            <span className="truncate">Daftar Sekarang</span>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary hover:bg-[#d55f0e] active:bg-[#bd520a] active:scale-[0.98] text-white text-base font-bold leading-normal tracking-[0.015em] transition-all duration-200 shadow-md shadow-orange-500/20 hover:shadow-lg hover:shadow-orange-500/30 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span className="truncate">{loading ? 'Memproses...' : 'Daftar Sekarang'}</span>
                         </button>
                     </form>
-
-                    {/* Divider */}
-                    <div className="relative flex py-1 items-center">
-                        <div className="flex-grow border-t border-border-light dark:border-border-dark"></div>
-                        <span className="flex-shrink-0 mx-4 text-text-sub-light dark:text-text-sub-dark text-sm font-medium">Atau daftar dengan</span>
-                        <div className="flex-grow border-t border-border-light dark:border-border-dark"></div>
-                    </div>
-
-                    {/* Social Login */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <button className="flex items-center justify-center gap-2 h-12 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark hover:bg-gray-50 dark:hover:bg-surface-dark/80 active:scale-[0.98] transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm text-text-main-light dark:text-text-main-dark font-semibold text-sm">
-                            <img alt="Google Logo" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSENPSDT52DnhPZKfQoXEPqwFVHjlFfi_L6s4Me-rctumUzRaDbK4FPOBhLuNTCLHEY-9DkPgGgIWBnZsDr7fCQqQZgQJkh-60pNnPfCt4BrosQszqAPK0RSjITtpKeai4ohVK3txOF4OreyBJBRXWRFdqkmGf8NGh1w6a7h1lZaQnYFhkSTt4fV4_6IBn8MlBBGb8-NmxAtkIFgUxZjBDD_gpGZZyhLafwSsUgzmigcOtvFjFTA2K3qrixWb80U6uYetSD7AOG0j0" />
-                            <span>Google</span>
-                        </button>
-                        <button className="flex items-center justify-center gap-2 h-12 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark hover:bg-gray-50 dark:hover:bg-surface-dark/80 active:scale-[0.98] transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm text-text-main-light dark:text-text-main-dark font-semibold text-sm">
-                            <img alt="Facebook Logo" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQCB0RK5OPb4YvkhApVGS-PmdmUCzursQRxCZp6FM-46RkMSSxB4HIGn0aFf-SV5Qfj3_05NXItdV_uK3B2RtEB5eg3QY9SWq7FP1EeOdWueE7PYlVHlkyte-5AzRjlDfkd9EkVOM-G57_bIb_Y3bommRUVAVRIt7NGfoAN4AguZLhoTPUhyasCj2dtX3MA4FFCbbAGVJGxGusTPee26CU91EyD2O1lfg7eTdikdgujtTTb7z7mHf4ngIQaMRv1BGu70DGej2PG27J" />
-                            <span>Facebook</span>
-                        </button>
-                    </div>
 
                     {/* Footer CTA */}
                     <div className="text-center pt-2">
@@ -145,7 +237,7 @@ const Register = () => {
 
                 {/* Footer Rights */}
                 <div className="absolute bottom-6 text-xs text-text-sub-light dark:text-text-sub-dark/50 hidden lg:block hover:text-text-sub-light transition-colors cursor-default">
-                    © 2024 Resep Nusantara. All rights reserved.
+                    © 2026 Resep Nusantara. All rights reserved.
                 </div>
             </div>
         </div>

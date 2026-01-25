@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { RecipeProvider } from './context/RecipeContext';
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
 import Footer from './components/Footer';
@@ -11,28 +13,34 @@ import ShoppingList from './pages/ShoppingList';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
+import Community from './pages/Community';
+import UploadRecipeStep1 from './pages/UploadRecipeStep1';
+import UploadRecipeStep2 from './pages/UploadRecipeStep2';
+import UploadRecipeStep3 from './pages/UploadRecipeStep3';
+import PostDetail from './pages/PostDetail';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(false);
 
   return (
-    <Router>
-      <MainLayout darkMode={darkMode} setDarkMode={setDarkMode} />
-    </Router>
+    <AuthProvider>
+      <RecipeProvider>
+        <Router>
+          <MainLayout darkMode={darkMode} setDarkMode={setDarkMode} />
+        </Router>
+      </RecipeProvider>
+    </AuthProvider>
   );
 };
 
 const MainLayout = ({ darkMode, setDarkMode }) => {
-  const location = window.location.pathname; // using window.location because useLocation needs to be inside Router, but we can standardly use useLocation if we extract content.
-  // Actually simpler to just wrap content in a component that uses useLocation
-  // Let's stick to the extracted component pattern for cleanliness or just use the hook inside a child of Router.
   return (
     <AppContent darkMode={darkMode} setDarkMode={setDarkMode} />
   );
 };
 
 // Helper component to use authentication-aware layout
-
 const AppContent = ({ darkMode, setDarkMode }) => {
   const location = useLocation();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
@@ -58,10 +66,15 @@ const AppContent = ({ darkMode, setDarkMode }) => {
           <Route path="/recipe/:id/cook" element={<CookingMode />} />
           <Route path="/planner" element={<Planner />} />
           <Route path="/shopping-list" element={<ShoppingList />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/post/:id" element={<PostDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
-          {/* Add more routes here for other pages */}
+          <Route path="/public-profile" element={<PublicProfile />} />
+          <Route path="/upload-recipe/step-1" element={<UploadRecipeStep1 />} />
+          <Route path="/upload-recipe/step-2" element={<UploadRecipeStep2 />} />
+          <Route path="/upload-recipe/step-3" element={<UploadRecipeStep3 />} />
         </Routes>
       </main>
 

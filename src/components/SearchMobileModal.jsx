@@ -26,14 +26,14 @@ const SearchMobileModal = ({ isOpen, onClose, searchQuery, setSearchQuery }) => 
 
     return (
         <>
-            {/* Backdrop - Starts below navbar */}
+            {/* Backdrop - Covers everything */}
             <div
-                className="fixed inset-x-0 bottom-0 top-16 bg-background-dark/40 backdrop-blur-sm z-20 transition-opacity animate-in fade-in duration-300"
+                className="fixed inset-0 bg-background-dark/60 backdrop-blur-md z-[90] transition-opacity animate-in fade-in duration-300"
                 onClick={onClose}
             />
 
-            {/* Mobile/Tablet Top-Center Modal - Positioned below navbar */}
-            <div className="fixed inset-x-0 bottom-0 top-16 z-20 flex items-start justify-center p-4 sm:p-6 pointer-events-none">
+            {/* Mobile/Tablet Top-Center Modal - Absolute top */}
+            <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 sm:p-6 pointer-events-none">
                 <div className="w-full max-w-xl bg-white dark:bg-surface-dark rounded-3xl border border-border-light dark:border-border-dark overflow-hidden pointer-events-auto animate-in slide-in-from-top-4 duration-300 flex flex-col">
 
                     {/* Search Input Header */}
@@ -64,11 +64,6 @@ const SearchMobileModal = ({ isOpen, onClose, searchQuery, setSearchQuery }) => 
                                 <h3 className="text-[10px] font-black uppercase tracking-[0.25em] mb-4 text-text-secondary/60 ml-2">
                                     Hasil untuk "{searchQuery}"
                                 </h3>
-                                <div className="space-y-1">
-                                    <Item icon="receipt_long" text={`Cari Resep "${searchQuery}"`} />
-                                    <Item icon="person" text={`Cari Pengguna "${searchQuery}"`} />
-                                    <Item icon="restaurant" text={`Cari Bahan "${searchQuery}"`} />
-                                </div>
                             </section>
                         ) : (
                             <section className="animate-in slide-in-from-bottom-2 duration-300">

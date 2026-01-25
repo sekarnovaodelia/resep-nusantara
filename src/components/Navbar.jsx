@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import SearchDropdown from './SearchDropdown';
 import SearchMobileModal from './SearchMobileModal';
 
@@ -10,10 +11,19 @@ const Navbar = ({ darkMode, setDarkMode }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const profileRef = useRef(null);
     const searchRef = useRef(null);
+    const navigate = useNavigate();
+
+    const { user, profile, loading, signOut } = useAuth();
 
     const closeSearch = () => {
         setIsSearchModalOpen(false);
         setIsMobileSearchOpen(false);
+    };
+
+    const handleSignOut = async () => {
+        await signOut();
+        setIsProfileOpen(false);
+        navigate('/login');
     };
 
     // Handle click outside to close dropdowns
@@ -54,21 +64,15 @@ const Navbar = ({ darkMode, setDarkMode }) => {
     }, [isSearchModalOpen, isMobileSearchOpen, isProfileOpen]);
 
     const navLinkClass = ({ isActive }) =>
-        `text-sm transition-colors ${isActive
+        `text-base transition-colors ${isActive
             ? 'text-primary font-bold'
             : 'font-semibold text-text-main dark:text-[#f3ece7] hover:text-primary'
         }`;
 
-    const user = {
-        name: "Sekar",
-        username: "@sekar_informatika",
-        role: "Admin",
-        avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAYQjTLBTPpvMcMpRiJp5ebo9i2Uckt48QnxOsvf7aBwUjpgIu1Z3dRIuaX-8rTOv6lX3isWJYRyZqqXsg5FFUKCIDt3Ob9oHXj1MeaBLANoNt8Hp-c6eAwg1iZ0-OaZUYUyFn5JFSCc6U2hAE77r4OPoZwSNzxEMkLLUmbTT5gr0gQpX7l_V969RDD4D6BB0ocg2ZzBovR9nYmYUcCa7sbojtvYirrf3RbGqT0Jrjl0Z-BVLe0eoHTszP4Mb5t-Z_5Na430n1_AhOh",
-        stats: {
-            recipes: 12,
-            achievements: 5
-        }
-    };
+    // Use auth data or default
+    const displayName = profile?.full_name || user?.user_metadata?.full_name || 'Pengguna';
+    const username = profile?.username || user?.user_metadata?.username || 'user';
+    const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || (user ? 'https://ui-avatars.com/api/?name=' + encodeURIComponent(displayName) + '&background=EA6A12&color=fff' : null);
 
     return (
         <header className="flex-shrink-0 h-16 flex items-center justify-between px-6 bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark z-30 sticky top-0 transition-colors duration-200">
@@ -92,9 +96,9 @@ const Navbar = ({ darkMode, setDarkMode }) => {
             {/* Main Search Bar (Desktop) */}
             <div className="flex-1 max-w-xl mx-4 sm:mx-8 hidden lg:flex relative" ref={searchRef}>
                 <div className="relative w-full">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-xl">search</span>
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-black dark:text-white text-xl">search</span>
                     <input
-                        className="w-full h-10 pl-10 pr-4 rounded-full bg-[#fcfaf8] dark:bg-accent-dark border border-border-light dark:border-border-dark focus:ring-2 focus:ring-primary focus:border-primary text-sm dark:text-white transition-all placeholder:text-text-secondary/60 search-dropdown-input"
+                        className="w-full h-10 pl-10 pr-4 rounded-full bg-[#fcfaf8] dark:bg-accent-dark border border-border-light dark:border-border-dark focus:ring-2 focus:ring-primary focus:border-primary text-sm dark:text-white transition-all placeholder:text-gray-600 dark:placeholder:text-gray-300 search-dropdown-input"
                         placeholder="Cari resep, bahan..."
                         type="text"
                         value={searchQuery}
@@ -139,69 +143,64 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                 </button>
 
                 {/* User Profile Thumbnail & Dropdown (Rightmost) */}
-                <div className="relative" ref={profileRef}>
-                    <button
-                        onClick={() => setIsProfileOpen(!isProfileOpen)}
-                        className={`size-10 rounded-full border-2 transition-all p-0.5 ${isProfileOpen ? 'border-primary' : 'border-primary/20'}`}
-                    >
-                        <div className="size-full rounded-full bg-cover bg-center" style={{ backgroundImage: `url("${user.avatar}")` }}></div>
-                    </button>
+                {user ? (
+                    <div className="relative" ref={profileRef}>
+                        <button
+                            onClick={() => setIsProfileOpen(!isProfileOpen)}
+                            className={`size-10 rounded-full border-2 transition-all p-0.5 ${isProfileOpen ? 'border-primary' : 'border-primary/20'}`}
+                        >
+                            <div className="size-full rounded-full bg-cover bg-center" style={{ backgroundImage: `url("${avatarUrl}")` }}></div>
+                        </button>
 
-                    {/* Profile Dropdown */}
-                    {isProfileOpen && (
-                        <div className="absolute right-0 mt-3 w-[min(calc(100vw-2rem),20rem)] bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl overflow-hidden z-50 animate-in fade-in zoom-in duration-200 origin-top-right">
-                            {/* Dropdown Header */}
-                            <div className="p-5 bg-accent/30 dark:bg-accent-dark/30 border-b border-border-light dark:border-border-dark flex items-center gap-4">
-                                <div className="size-14 rounded-full border-2 border-white dark:border-gray-700 shadow-sm overflow-hidden flex-shrink-0">
-                                    <img src={user.avatar} alt="User avatar" className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex flex-col min-w-0">
-                                    <h4 className="font-extrabold text-text-main dark:text-white text-base leading-tight truncate">{user.name}</h4>
-                                    <p className="text-xs text-text-secondary font-medium dark:text-gray-400 truncate">{user.username}</p>
-                                    <div className="mt-2">
-                                        <span className="px-2 py-0.5 bg-primary/10 dark:bg-primary/20 text-primary text-[10px] font-bold rounded-md uppercase tracking-wider border border-primary/20">{user.role}</span>
+                        {/* Profile Dropdown */}
+                        {isProfileOpen && (
+                            <div className="absolute right-0 mt-3 w-[min(calc(100vw-2rem),20rem)] bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl overflow-hidden z-50 animate-in fade-in zoom-in duration-200 origin-top-right">
+                                {/* Dropdown Header */}
+                                <div className="p-5 bg-accent/30 dark:bg-accent-dark/30 border-b border-border-light dark:border-border-dark flex items-center gap-4">
+                                    <div className="size-14 rounded-full border-2 border-white dark:border-gray-700 shadow-sm overflow-hidden flex-shrink-0">
+                                        <img src={avatarUrl} alt="User avatar" className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <h4 className="font-extrabold text-text-main dark:text-white text-base leading-tight truncate">{displayName}</h4>
+                                        <p className="text-xs text-text-secondary font-medium dark:text-gray-400 truncate">@{username}</p>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Info & Stats */}
-                            <div className="p-4 grid grid-cols-2 gap-3 border-b border-border-light dark:border-border-dark bg-background-light/30 dark:bg-background-dark/30">
-                                <div className="flex flex-col items-center justify-center p-3 bg-white dark:bg-accent-dark/50 rounded-xl border border-border-light dark:border-border-dark shadow-sm">
-                                    <span className="text-lg font-black text-primary leading-none">{user.stats.recipes}</span>
-                                    <span className="text-[10px] font-bold text-text-secondary dark:text-gray-400 mt-1 uppercase tracking-tight text-center">Resep Saya</span>
+                                {/* Menu Links */}
+                                <div className="p-2">
+                                    <Link to="/upload-recipe/step-1" className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group" onClick={() => setIsProfileOpen(false)}>
+                                        <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">add_circle</span>
+                                        <span>Upload Resep</span>
+                                    </Link>
+                                    <Link to="/profile" className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group" onClick={() => setIsProfileOpen(false)}>
+                                        <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">person_outline</span>
+                                        <span>Lihat Profil</span>
+                                    </Link>
+                                    <button className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group">
+                                        <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">settings</span>
+                                        <span>Pengaturan</span>
+                                    </button>
                                 </div>
-                                <div className="flex flex-col items-center justify-center p-3 bg-white dark:bg-accent-dark/50 rounded-xl border border-border-light dark:border-border-dark shadow-sm">
-                                    <span className="text-lg font-black text-primary leading-none">{user.stats.achievements}</span>
-                                    <span className="text-[10px] font-bold text-text-secondary dark:text-gray-400 mt-1 uppercase tracking-tight text-center">Pencapaian</span>
+
+                                {/* Logout */}
+                                <div className="p-2 border-t border-border-light dark:border-border-dark mt-1 bg-background-light/10 dark:bg-white/5">
+                                    <button onClick={handleSignOut} className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all group">
+                                        <span className="material-symbols-outlined w-6 transition-transform group-hover:translate-x-0.5 text-center">logout</span>
+                                        <span>Keluar</span>
+                                    </button>
                                 </div>
                             </div>
-
-                            {/* Menu Links */}
-                            <div className="p-2">
-                                <Link to="/profile" className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group" onClick={() => setIsProfileOpen(false)}>
-                                    <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">person_outline</span>
-                                    <span>Lihat Profil</span>
-                                </Link>
-                                <Link to="/profile/edit" className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group" onClick={() => setIsProfileOpen(false)}>
-                                    <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">edit_note</span>
-                                    <span>Ubah Profil</span>
-                                </Link>
-                                <button className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group">
-                                    <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">settings</span>
-                                    <span>Pengaturan</span>
-                                </button>
-                            </div>
-
-                            {/* Logout */}
-                            <div className="p-2 border-t border-border-light dark:border-border-dark mt-1 bg-background-light/10 dark:bg-white/5">
-                                <button className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all group">
-                                    <span className="material-symbols-outlined w-6 transition-transform group-hover:translate-x-0.5 text-center">logout</span>
-                                    <span>Keluar</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                ) : (
+                    <Link
+                        to="/login"
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-lg">login</span>
+                        <span className="hidden sm:inline">Masuk</span>
+                    </Link>
+                )}
             </div>
 
             {/* Mobile/Tablet Centered Search Modal */}

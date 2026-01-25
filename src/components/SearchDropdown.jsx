@@ -20,10 +20,6 @@ const SearchDropdown = ({ isOpen, onClose, searchQuery, setSearchQuery }) => {
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-4 text-text-secondary">
                                 Hasil untuk "{searchQuery}"
                             </h3>
-                            <div className="space-y-2">
-                                <Item icon="receipt_long" text={`Cari Resep "${searchQuery}"`} />
-                                <Item icon="person" text={`Cari Pengguna "${searchQuery}"`} />
-                            </div>
                         </section>
                     ) : (
                         <section>

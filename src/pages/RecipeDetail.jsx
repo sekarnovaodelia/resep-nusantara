@@ -6,7 +6,7 @@ const RecipeDetail = () => {
     const [selectedImage, setSelectedImage] = useState(null);
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 py-6 md:py-8 lg:px-8">
+        <div className="w-full max-w-6xl mx-auto px-4 py-6 md:py-8 lg:px-8">
             {/* Lightbox for Ingredients */}
             {selectedImage && (
                 <div
@@ -88,34 +88,7 @@ const RecipeDetail = () => {
                                     Follow
                                 </button>
                             </div>
-
-                            {/* Stats Grid */}
-                            <div className="grid grid-cols-3 gap-3 mb-6">
-                                <div className="flex flex-col items-center justify-center p-3 bg-background-light dark:bg-background-dark rounded-xl text-center border border-border-light dark:border-border-dark">
-                                    <span className="material-symbols-outlined text-primary mb-1">schedule</span>
-                                    <span className="text-xs text-text-secondary dark:text-gray-400">Waktu</span>
-                                    <span className="text-sm font-bold text-text-main dark:text-white">4 Jam</span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center p-3 bg-background-light dark:bg-background-dark rounded-xl text-center border border-border-light dark:border-border-dark">
-                                    <span className="material-symbols-outlined text-primary mb-1">signal_cellular_alt</span>
-                                    <span className="text-xs text-text-secondary dark:text-gray-400">Level</span>
-                                    <span className="text-sm font-bold text-text-main dark:text-white">Sulit</span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center p-3 bg-background-light dark:bg-background-dark rounded-xl text-center border border-border-light dark:border-border-dark">
-                                    <span className="material-symbols-outlined text-primary mb-1">local_fire_department</span>
-                                    <span className="text-xs text-text-secondary dark:text-gray-400">Kalori</span>
-                                    <span className="text-sm font-bold text-text-main dark:text-white">450 kkal</span>
-                                </div>
-                            </div>
                         </div>
-
-                        <Link
-                            to={`/recipe/${id}/cook`}
-                            className="w-full bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 text-white text-lg font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-3 group"
-                        >
-                            <span className="material-symbols-outlined group-hover:animate-bounce">skillet</span>
-                            MULAI MASAK
-                        </Link>
                     </div>
                 </div>
             </div>
@@ -127,21 +100,7 @@ const RecipeDetail = () => {
                     <div className="bg-white dark:bg-surface-dark p-6 rounded-2xl shadow-sm border border-border-light dark:border-border-dark sticky top-24">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-bold text-text-main dark:text-white">Bahan-bahan</h3>
-                            <div className="text-xs font-medium text-text-secondary bg-background-light dark:bg-background-dark px-2 py-1 rounded-lg">6 Porsi</div>
                         </div>
-
-                        {/* Serving Size Control */}
-                        <div className="space-y-1 mb-6">
-                            <div className="flex items-center justify-between text-sm text-text-secondary dark:text-gray-400 mb-2">
-                                <span>Serving size</span>
-                                <div className="flex items-center gap-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-1">
-                                    <button className="w-6 h-6 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-text-main dark:text-white font-bold">-</button>
-                                    <span className="font-bold text-text-main dark:text-white">6</span>
-                                    <button className="w-6 h-6 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-text-main dark:text-white font-bold">+</button>
-                                </div>
-                            </div>
-                        </div>
-
                         {/* Ingredients List */}
                         <div className="space-y-3">
                             <div
@@ -203,9 +162,6 @@ const RecipeDetail = () => {
                     <div className="bg-white dark:bg-surface-dark p-6 md:p-8 rounded-2xl shadow-sm border border-border-light dark:border-border-dark">
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-2xl font-bold text-text-main dark:text-white">Cara Membuat</h2>
-                            <button className="text-sm text-primary font-medium hover:underline flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[18px]">print</span> Print Resep
-                            </button>
                         </div>
 
                         <div className="space-y-8">
@@ -260,14 +216,6 @@ const RecipeDetail = () => {
                                 </div>
                             </div>
                         </div>
-
-                        {/* Tips */}
-                        <div className="mt-10 p-4 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-100 dark:border-yellow-900/30 rounded-xl flex gap-3">
-                            <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-500">lightbulb</span>
-                            <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                                <strong>Tips Chef Siti:</strong> Jika ingin daging lebih empuk, bisa menggunakan presto selama 30 menit sebelum dimasak dengan santan hingga kering.
-                            </div>
-                        </div>
                     </div>
 
                     {/* Community Cooksnaps & Comments (Merged section styling for simplicity in code) */}
@@ -275,55 +223,7 @@ const RecipeDetail = () => {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                             <div className="flex items-center gap-3">
                                 <div className="w-1.5 h-6 bg-primary rounded-full"></div>
-                                <h3 className="text-xl font-bold text-text-main dark:text-white">Cooksnaps Komunitas</h3>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm text-text-secondary dark:text-gray-400 font-medium">12 Orang sudah mencoba</span>
-                                <button className="text-primary text-sm font-bold hover:bg-primary/5 px-3 py-1.5 rounded-lg transition-colors border border-primary/20 hover:border-primary/50">
-                                    Lihat Semua
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Cooksnap Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-8">
-                            {/* Item 1 */}
-                            <div className="relative group cursor-pointer aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
-                                <div className="w-full h-full bg-cover bg-center transform group-hover:scale-110 transition-transform duration-500" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBGz_oRCILm5GmrESFqbxT4RC7T25C_jADdoteI4oNwzqrpKmuIdqaAH79Es0hMhw34x0-QblG0QsD98nmkL0mivk8Y8NMaKPza6Hl1ILhjg7YW9728ygWCH7g-EXQmws7zvOrej2ppK-yGMTJdvcONeVNAMJzhjvdokfbTvH_Hmb29DfJ1CP_tUbfOPjCwgvkYaYwNi-gfmWMFdODKMMCg3eQ-U7WUeltsmaVM9HgtyjaosI93Yz1oUePjxLAIdZHsWuS7iJ1qTr10')" }}></div>
-                                <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/95 dark:bg-black/80 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full shadow-sm z-10">
-                                    <span className="material-symbols-outlined text-[12px] sm:text-[14px] text-blue-500 fill-current">verified</span>
-                                    <span className="text-[8px] sm:text-[10px] font-bold text-text-main dark:text-white leading-none whitespace-nowrap">Verified Cook</span>
-                                </div>
-                                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 text-white text-[10px] sm:text-xs px-2 py-1 rounded-full backdrop-blur-sm shadow-sm ring-1 ring-white/20">
-                                    <span className="material-symbols-outlined text-[10px] sm:text-[12px] fill-current text-white">favorite</span> 12
-                                </div>
-                            </div>
-                            {/* Item 2 */}
-                            <div className="relative group cursor-pointer aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
-                                <div className="w-full h-full bg-cover bg-center transform group-hover:scale-110 transition-transform duration-500" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuC9nHev8DnARW4BTsrJ58tadd2wJFiAGC7fzrUZeS1FA00cuQhmzhP4Bm_lOfYS9WVFwU-YrtAUBjb-e5_0Kf4larmKAXUYDmC-wQtalMWgNjaJ23cCaZgU_L9iSkJcjqg7jknI07F-6SQOGJ3dUBiTdka3L1zxD_kiz9r56d6QBV1WvRwB9lCv8znM_d5-V88Ywd2VCuDYC8L0jYUuokwD77kWfyv8ypt1PKWwA4GJ7bCXd1cIDot95DON-3oODP0XR47qLrtURCZZ')" }}></div>
-                                <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/95 dark:bg-black/80 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full shadow-sm z-10">
-                                    <span className="material-symbols-outlined text-[12px] sm:text-[14px] text-blue-500 fill-current">verified</span>
-                                    <span className="text-[8px] sm:text-[10px] font-bold text-text-main dark:text-white leading-none whitespace-nowrap">Verified Cook</span>
-                                </div>
-                                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 text-white text-[10px] sm:text-xs px-2 py-1 rounded-full backdrop-blur-sm shadow-sm ring-1 ring-white/20">
-                                    <span className="material-symbols-outlined text-[10px] sm:text-[12px] fill-current text-white">favorite</span> 8
-                                </div>
-                            </div>
-                            {/* Item 3 */}
-                            <div className="relative group cursor-pointer aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
-                                <div className="w-full h-full bg-cover bg-center transform group-hover:scale-110 transition-transform duration-500" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBowqcTkz74T7aZy1RsXqnCLbbAixlI56x44J1I8qaQJLmwlPpE-TSiYV-nqL9G2GxutkIfII15_gW2axKqA1gbA7ZruPSnxY_8QPzoNRY4ntWExpuAqNvb2yDl8lVeeomDpds_WYCMyQ_TuGE63jc3iR-OQTSmfaMEuVpMaCxTg-ZpfFUDyTWO17zAu-_tJ-IK-wGyhDdXOMO085y7C1dL00-ztyqlWNIa7ku1TT0MzKF1X08t46GsXC23C-RaHDCQFYZ__vkc06GZ')" }}></div>
-                                <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/95 dark:bg-black/80 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full shadow-sm z-10">
-                                    <span className="material-symbols-outlined text-[12px] sm:text-[14px] text-blue-500 fill-current">verified</span>
-                                    <span className="text-[8px] sm:text-[10px] font-bold text-text-main dark:text-white leading-none whitespace-nowrap">Verified Cook</span>
-                                </div>
-                                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 text-white text-[10px] sm:text-xs px-2 py-1 rounded-full backdrop-blur-sm shadow-sm ring-1 ring-white/20">
-                                    <span className="material-symbols-outlined text-[10px] sm:text-[12px] fill-current text-white">favorite</span> 5
-                                </div>
-                            </div>
-                            {/* Upload Button */}
-                            <div className="aspect-square rounded-xl border-2 border-dashed border-primary/20 dark:border-primary/40 flex flex-col items-center justify-center text-text-secondary dark:text-gray-400 hover:text-primary hover:border-primary hover:bg-primary/5 cursor-pointer transition-all bg-background-light dark:bg-background-dark group">
-                                <span className="material-symbols-outlined text-2xl sm:text-3xl mb-1 group-hover:scale-110 transition-transform">add_a_photo</span>
-                                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Bagikan Foto</span>
+                                <h3 className="text-xl font-bold text-text-main dark:text-white">Kometar</h3>
                             </div>
                         </div>
 
