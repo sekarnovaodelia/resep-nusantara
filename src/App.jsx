@@ -15,9 +15,7 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
 import Community from './pages/Community';
-import UploadRecipeStep1 from './pages/UploadRecipeStep1';
-import UploadRecipeStep2 from './pages/UploadRecipeStep2';
-import UploadRecipeStep3 from './pages/UploadRecipeStep3';
+import UploadRecipe from './pages/UploadRecipe';
 import PostDetail from './pages/PostDetail';
 
 const App = () => {
@@ -72,9 +70,7 @@ const AppContent = ({ darkMode, setDarkMode }) => {
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/public-profile" element={<PublicProfile />} />
-          <Route path="/upload-recipe/step-1" element={<UploadRecipeStep1 />} />
-          <Route path="/upload-recipe/step-2" element={<UploadRecipeStep2 />} />
-          <Route path="/upload-recipe/step-3" element={<UploadRecipeStep3 />} />
+          <Route path="/upload-recipe" element={<UploadRecipe />} />
         </Routes>
       </main>
 

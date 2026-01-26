@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-const SearchMobileModal = ({ isOpen, onClose, searchQuery, setSearchQuery }) => {
+const SearchMobileModal = ({ isOpen, onClose, searchQuery, setSearchQuery, onSearch }) => {
     const inputRef = useRef(null);
     const trendingSearches = [
         'Nasi Goreng',
@@ -21,6 +21,12 @@ const SearchMobileModal = ({ isOpen, onClose, searchQuery, setSearchQuery }) => 
             document.body.style.overflow = 'unset';
         };
     }, [isOpen]);
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            if (onSearch) onSearch(searchQuery);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -47,6 +53,7 @@ const SearchMobileModal = ({ isOpen, onClose, searchQuery, setSearchQuery }) => 
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={handleKeyDown}
                             />
                             <button
                                 onClick={onClose}
@@ -64,6 +71,13 @@ const SearchMobileModal = ({ isOpen, onClose, searchQuery, setSearchQuery }) => 
                                 <h3 className="text-[10px] font-black uppercase tracking-[0.25em] mb-4 text-text-secondary/60 ml-2">
                                     Hasil untuk "{searchQuery}"
                                 </h3>
+                                <button
+                                    onClick={() => onSearch && onSearch(searchQuery)}
+                                    className="w-full text-left px-5 py-3 rounded-xl bg-primary/5 hover:bg-primary/10 text-primary font-bold flex items-center gap-3 transition-colors"
+                                >
+                                    <span className="material-symbols-outlined">search</span>
+                                    Cari "{searchQuery}"
+                                </button>
                             </section>
                         ) : (
                             <section className="animate-in slide-in-from-bottom-2 duration-300">
@@ -74,7 +88,10 @@ const SearchMobileModal = ({ isOpen, onClose, searchQuery, setSearchQuery }) => 
                                     {trendingSearches.map((item, i) => (
                                         <button
                                             key={i}
-                                            onClick={() => setSearchQuery(item)}
+                                            onClick={() => {
+                                                setSearchQuery(item);
+                                                if (onSearch) onSearch(item);
+                                            }}
                                             className="px-5 py-2.5 rounded-xl bg-primary/5 hover:bg-primary/20 
                                                        border border-primary/10 text-sm font-bold text-primary 
                                                        transition-all hover:scale-105 active:scale-95"

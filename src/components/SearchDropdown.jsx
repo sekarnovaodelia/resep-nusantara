@@ -1,6 +1,6 @@
 import React from 'react';
 
-const SearchDropdown = ({ isOpen, onClose, searchQuery, setSearchQuery }) => {
+const SearchDropdown = ({ isOpen, onClose, searchQuery, setSearchQuery, onSearch }) => {
     const trendingSearches = [
         'Nasi Goreng',
         'Sate Ayam',
@@ -20,6 +20,13 @@ const SearchDropdown = ({ isOpen, onClose, searchQuery, setSearchQuery }) => {
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-4 text-text-secondary">
                                 Hasil untuk "{searchQuery}"
                             </h3>
+                            <button
+                                onClick={() => onSearch && onSearch(searchQuery)}
+                                className="w-full text-left px-4 py-3 rounded-xl bg-primary/5 hover:bg-primary/10 text-primary font-bold flex items-center gap-3 transition-colors"
+                            >
+                                <span className="material-symbols-outlined">search</span>
+                                Cari "{searchQuery}"
+                            </button>
                         </section>
                     ) : (
                         <section>
@@ -30,7 +37,10 @@ const SearchDropdown = ({ isOpen, onClose, searchQuery, setSearchQuery }) => {
                                 {trendingSearches.map((item, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => setSearchQuery(item)}
+                                        onClick={() => {
+                                            setSearchQuery(item);
+                                            if (onSearch) onSearch(item);
+                                        }}
                                         className="px-4 py-2 rounded-full bg-primary/5
                                                    hover:bg-primary/10 border border-primary/10
                                                    text-sm font-bold text-primary transition-colors"

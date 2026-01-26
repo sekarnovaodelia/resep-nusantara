@@ -74,6 +74,18 @@ const Navbar = ({ darkMode, setDarkMode }) => {
     const username = profile?.username || user?.user_metadata?.username || 'user';
     const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || (user ? 'https://ui-avatars.com/api/?name=' + encodeURIComponent(displayName) + '&background=EA6A12&color=fff' : null);
 
+    const handleSearchNav = (query) => {
+        if (!query.trim()) return;
+        navigate(`/?search=${encodeURIComponent(query)}`);
+        closeSearch();
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSearchNav(searchQuery);
+        }
+    };
+
     return (
         <header className="flex-shrink-0 h-16 flex items-center justify-between px-6 bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark z-30 sticky top-0 transition-colors duration-200">
             {/* Logo and Nav */}
@@ -104,6 +116,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => setIsSearchModalOpen(true)}
+                        onKeyDown={handleKeyDown}
                     />
 
                     {/* Desktop Dropdown attached to this container */}
@@ -112,6 +125,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                         onClose={closeSearch}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
+                        onSearch={handleSearchNav}
                     />
                 </div>
             </div>
@@ -168,18 +182,14 @@ const Navbar = ({ darkMode, setDarkMode }) => {
 
                                 {/* Menu Links */}
                                 <div className="p-2">
-                                    <Link to="/upload-recipe/step-1" className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group" onClick={() => setIsProfileOpen(false)}>
-                                        <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">add_circle</span>
-                                        <span>Upload Resep</span>
-                                    </Link>
                                     <Link to="/profile" className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group" onClick={() => setIsProfileOpen(false)}>
                                         <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">person_outline</span>
                                         <span>Lihat Profil</span>
                                     </Link>
-                                    <button className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group">
-                                        <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">settings</span>
-                                        <span>Pengaturan</span>
-                                    </button>
+                                    <Link to="/upload-recipe" className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group" onClick={() => setIsProfileOpen(false)}>
+                                        <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">add_circle</span>
+                                        <span>Upload Resep</span>
+                                    </Link>
                                 </div>
 
                                 {/* Logout */}
@@ -209,6 +219,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                 onClose={closeSearch}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
+                onSearch={handleSearchNav}
             />
         </header>
     );

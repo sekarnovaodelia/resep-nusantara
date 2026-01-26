@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 const AuthContext = createContext({});
@@ -7,77 +7,100 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [session, setSession] = useState(null); // Store full session
+    const [session, setSession] = useState(null);
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Ref to track the current profile ID being fetched to prevent duplicates
+    const fetchingProfileId = React.useRef(null);
+
+    // Initial load & Auth Listener
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchProfile(session.user.id);
-            } else {
+        let mounted = true;
+
+        const initAuth = async () => {
+            // 1. Get initial session
+            const { data: { session: initialSession } } = await supabase.auth.getSession();
+
+            if (mounted) {
+                setSession(initialSession);
+                setUser(initialSession?.user ?? null);
+                if (initialSession?.user) {
+                    await fetchProfileInternal(initialSession.user.id);
+                }
                 setLoading(false);
             }
-        });
 
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
-                console.log('🟢 Auth state changed:', event, session?.user?.id);
-                setSession(session);
-                setUser(session?.user ?? null);
-                if (session?.user) {
-                    console.log('🟢 Fetching profile for user:', session.user.id);
-                    await fetchProfile(session.user.id);
-                } else {
-                    setProfile(null);
-                    setLoading(false);
+            // 2. Setup listener
+            const { data: { subscription } } = supabase.auth.onAuthStateChange(
+                async (event, currentSession) => {
+                    if (!mounted) return;
+
+                    console.log('🟢 Auth state changed:', event);
+                    setSession(currentSession);
+                    setUser(currentSession?.user ?? null);
+
+                    if (currentSession?.user) {
+                        // Only fetch if not already fetched/fetching for this user
+                        await fetchProfileInternal(currentSession.user.id);
+                    } else {
+                        setProfile(null);
+                        fetchingProfileId.current = null;
+                        setLoading(false);
+                    }
                 }
-            }
-        );
+            );
 
-        return () => subscription.unsubscribe();
+            return () => {
+                mounted = false;
+                subscription.unsubscribe();
+            };
+        };
+
+        initAuth();
     }, []);
 
-    const fetchProfile = async (userId) => {
-        console.log('🟢 fetchProfile called for userId:', userId);
+    const fetchProfileInternal = async (userId) => {
+        // Prevent redundant fetches for same user
+        if (fetchingProfileId.current === userId) return;
+        fetchingProfileId.current = userId;
+
+        console.log('🟢 Fetching profile for:', userId);
+
         try {
-            console.log('🟢 Querying profiles table...');
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
-                .single();
+                .maybeSingle();
 
-            console.log('🟢 Profile query result:', { data, error });
-
-            if (error) throw error;
-            console.log('🟢 Setting profile data:', data);
-            setProfile(data);
+            if (!error && data) {
+                setProfile(data);
+            } else {
+                console.error('🔴 Error fetching profile:', error);
+                setProfile(null);
+            }
         } catch (error) {
-            console.error('🔴 Error fetching profile:', error);
-        } finally {
-            console.log('🟢 fetchProfile finally - setting loading to false');
-            setLoading(false);
+            console.error('🔴 Unexpected error:', error);
+            setProfile(null);
         }
     };
 
     const signOut = async () => {
-        await supabase.auth.signOut();
+        fetchingProfileId.current = null;
         setUser(null);
+        setSession(null);
         setProfile(null);
+        await supabase.auth.signOut();
     };
 
     const value = {
         user,
-        session, // Expose session
+        session,
         profile,
         loading,
         signOut,
-        refreshProfile: () => user && fetchProfile(user.id),
+        refreshProfile: () => user && (fetchingProfileId.current = null, fetchProfileInternal(user.id)),
     };
 
     return (
