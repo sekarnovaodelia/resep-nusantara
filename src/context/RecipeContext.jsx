@@ -81,13 +81,13 @@ export const RecipeProvider = ({ children }) => {
         regionName, setRegionName,
 
         // Step 2
-        ingredients,
+        ingredients, setIngredients,
         addIngredient,
         removeIngredient,
         updateIngredient,
 
         // Step 3
-        steps,
+        steps, setSteps,
         addStep,
         removeStep,
         updateStep,

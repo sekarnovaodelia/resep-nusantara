@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toggleLikePost } from '../lib/socialService';
+import { fetchComments } from '../lib/interactionService';
+import { useAuth } from '../context/AuthContext';
+import CommentItem from './CommentItem';
+import CommentForm from './CommentForm';
 
 const FeedCard = ({
     id,
     avatar,
     name,
+    userId,
     time,
     location,
     content,
@@ -12,57 +18,110 @@ const FeedCard = ({
     recipeId,
     recipeTitle,
     recipeImage,
-    likes,
-    comments,
-    initialLiked = false,
+    likesCount,    // Match service
+    commentsCount, // Match service
+    likedCheck = [],
     isDetailView = false
 }) => {
-    const [isLiked, setIsLiked] = useState(initialLiked);
-    const [likeCount, setLikeCount] = useState(likes);
-    const [isCommentOpen, setIsCommentOpen] = useState(isDetailView);
-    const [commentCount, setCommentCount] = useState(comments);
-
+    const { user } = useAuth();
     const navigate = useNavigate();
 
-    const handleCardClick = () => {
+    // Optimistic Like State
+    const initialLiked = user ? likedCheck.some(l => l.user_id === user.id) : false;
+    const [isLiked, setIsLiked] = useState(initialLiked);
+    const [likeCount, setLikeCount] = useState(likesCount || 0);
+    const [likeLoading, setLikeLoading] = useState(false);
+
+    // Comment State
+    const [isCommentOpen, setIsCommentOpen] = useState(isDetailView);
+    const [commentCount, setCommentCount] = useState(commentsCount || 0);
+    const [commentsList, setCommentsList] = useState([]);
+    const [commentsLoaded, setCommentsLoaded] = useState(false);
+    const [commentsLoading, setCommentsLoading] = useState(false);
+
+    const handleCardClick = (e) => {
+        // Only navigate if clicking strictly on card background, not interactive elements
+        // (Handled by stopPropagation on children)
         if (id && !isDetailView) {
-            navigate(`/post/${id}`);
+            // navigate(`/post/${id}`); // Disabled for now unless post detail exists
         }
     };
 
-    const handleLike = (e) => {
+    const handleLike = async (e) => {
         e.stopPropagation();
-        if (isLiked) {
-            setLikeCount(prev => prev - 1);
+        if (!user || likeLoading) return;
+
+        // Optimistic Update
+        const previousLiked = isLiked;
+        const previousCount = likeCount;
+
+        setIsLiked(!previousLiked);
+        setLikeCount(prev => previousLiked ? prev - 1 : prev + 1);
+        setLikeLoading(true);
+
+        try {
+            const { error } = await toggleLikePost(id, user.id);
+            if (error) throw error;
+        } catch (error) {
+            console.error('Like failed:', error);
+            // Rollback
+            setIsLiked(previousLiked);
+            setLikeCount(previousCount);
+        } finally {
+            setLikeLoading(false);
+        }
+    };
+
+    const handleCommentClick = async (e) => {
+        e.stopPropagation();
+        if (!isCommentOpen) {
+            setIsCommentOpen(true);
+            if (!commentsLoaded) {
+                setCommentsLoading(true);
+                const data = await fetchComments(id, 'post');
+                setCommentsList(data);
+                setCommentsLoaded(true);
+                setCommentsLoading(false);
+            }
         } else {
-            setLikeCount(prev => prev + 1);
-        }
-        setIsLiked(!isLiked);
-    };
-
-    const handleCommentClick = (e) => {
-        e.stopPropagation();
-        if (!isDetailView) {
-            navigate(`/post/${id}`);
+            setIsCommentOpen(false);
         }
     };
 
-    const handleActionClick = (e) => {
+    const reloadComments = async () => {
+        const data = await fetchComments(id, 'post');
+        setCommentsList(data);
+        setCommentCount(prev => prev + 1); // Simple increment for immediate feedback
+    };
+
+    const handleProfileClick = (e) => {
         e.stopPropagation();
+        if (userId) {
+            navigate(`/public-profile?id=${userId}`);
+        }
     };
 
     return (
         <article
             onClick={handleCardClick}
-            className="bg-card-light dark:bg-card-dark rounded-2xl shadow-sm border border-[#e7d9cf] dark:border-[#3d2f26] overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer group/card w-full"
+            className="bg-card-light dark:bg-card-dark rounded-2xl shadow-sm border border-[#e7d9cf] dark:border-[#3d2f26] overflow-hidden transition-all duration-200 hover:shadow-md cursor-default group/card w-full"
         >
             {/* Card Header */}
             <div className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-full bg-cover bg-center border border-gray-100" data-alt={`Avatar of ${name}`} style={{ backgroundImage: `url("${avatar}")` }}></div>
-                    <div>
+                    <div
+                        onClick={handleProfileClick}
+                        className="size-10 rounded-full bg-cover bg-center border border-gray-100 hover:opacity-80 transition-opacity cursor-pointer"
+                        data-alt={`Avatar of ${name}`}
+                        style={{ backgroundImage: `url("${avatar || 'https://placehold.co/100x100'}")` }}
+                    ></div>
+                    <div onClick={handleProfileClick} className="hover:underline cursor-pointer">
                         <h4 className="font-bold text-sm text-text-main dark:text-white">{name}</h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{time} • {location}</p>
+                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                            {/* Simple time logic if time is ISO string, else display as is */}
+                            <span>{time && time.includes('T') ? new Date(time).toLocaleDateString() : time}</span>
+                            {location && <span>• {location}</span>}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -71,7 +130,7 @@ const FeedCard = ({
             <div className="pb-4">
                 {/* Card Content Text */}
                 <div className="px-4 pb-3">
-                    <div className="text-sm leading-relaxed text-gray-700 dark:text-gray-200">
+                    <div className="text-sm leading-relaxed text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
                         {content}
                     </div>
                 </div>
@@ -89,10 +148,10 @@ const FeedCard = ({
             {recipeId && recipeTitle && (
                 <div className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                     <Link className="flex items-center gap-3 bg-orange-50 dark:bg-[#3d2f26] p-3 rounded-xl border border-orange-100 dark:border-white/5 hover:bg-orange-100 dark:hover:bg-white/10 transition-colors group/widget" to={`/recipe/${recipeId}`}>
-                        <div className="size-12 rounded-lg bg-cover bg-center flex-shrink-0" data-alt="Recipe thumbnail" style={{ backgroundImage: `url("${recipeImage}")` }}></div>
+                        <div className="size-12 rounded-lg bg-cover bg-center flex-shrink-0" data-alt="Recipe thumbnail" style={{ backgroundImage: `url("${recipeImage || 'https://placehold.co/100x100'}")` }}></div>
                         <div className="flex-grow min-w-0">
                             <p className="text-xs text-primary font-bold uppercase tracking-wider mb-0.5">Masak Resep</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100 group-hover/widget:text-primary transition-colors truncate">{recipeTitle}</p>
+                            <p className="text-sm font-bold text-text-main dark:text-white group-hover/widget:text-primary transition-colors truncate">{recipeTitle}</p>
                         </div>
                         <span className="material-symbols-outlined text-primary">chevron_right</span>
                     </Link>
@@ -101,7 +160,7 @@ const FeedCard = ({
 
             {/* Card Actions */}
             <div className="px-4 py-3 border-t border-[#e7d9cf] dark:border-[#3d2f26] flex flex-col gap-3">
-                <div className="flex items-center justify-between" onClick={handleActionClick}>
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
                         <button
                             onClick={handleLike}
@@ -116,49 +175,51 @@ const FeedCard = ({
                         </button>
                         <button
                             onClick={handleCommentClick}
-                            className={`flex items-center gap-2 group transition-colors ${isCommentOpen ? 'text-blue-500' : 'text-gray-500 hover:text-blue-500'}`}
+                            className={`flex items-center gap-2 group transition-colors ${isCommentOpen ? 'text-primary' : 'text-gray-500 hover:text-primary'}`}
                         >
-                            <span className="material-symbols-outlined text-[24px]">chat_bubble</span>
-                            <span className={`text-sm font-semibold ${isCommentOpen ? 'text-blue-500' : 'text-gray-600 dark:text-gray-300'}`}>
+                            <span className={`material-symbols-outlined text-[24px] ${isCommentOpen ? 'fill-current' : ''}`}>chat_bubble</span>
+                            <span className={`text-sm font-semibold ${isCommentOpen ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`}>
                                 {commentCount}
                             </span>
                         </button>
-                        <button className="flex items-center gap-2 group">
-                            <span className="material-symbols-outlined text-[24px] text-gray-500 group-hover:text-green-500 transition-colors">share</span>
-                        </button>
                     </div>
-                    <button className="text-gray-500 hover:text-primary transition-colors">
-                        <span className="material-symbols-outlined text-[24px]">bookmark</span>
-                    </button>
                 </div>
 
-                {/* Comment Section */}
+                {/* Comment Section (Inline) */}
                 {isCommentOpen && (
-                    <div className="flex flex-col gap-4 animate-fade-in pt-2" onClick={handleActionClick}>
-                        {/* Dummy Comments */}
-                        <div className="space-y-3">
-                            <div className="flex gap-3 items-start">
-                                <div className="size-8 rounded-full bg-cover bg-center flex-shrink-0" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCIL3OOZRbwVs7oQAMnlwq2-CizOvqf8Cq47LcuOoYDCdJXjY75ruGbuAbpOF73IX9LMcwPWAnopch-p8VtHHnm8uIBFQRFfFciJi_mgNyrnkp4bP7XRS72IJcylUY19Qib16AkHFByVXvOWBIRgG0bXQ7gmXGSrOOThe53f1TUrMev6qOgL_kg4VsAihY5_wEkwrlpfjJWvfj-j59fO32d762o20O_xWDQws4CZXEtBvE0-MoLOYu2kBbdja48vVpPUJ6dp8nDMI1D")' }}></div>
-                                <div className="bg-background-light dark:bg-background-dark p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl text-sm">
-                                    <p className="font-bold text-text-main dark:text-white mb-0.5">Chef Juna KW</p>
-                                    <p className="text-gray-700 dark:text-gray-300">Wah, mantap nih! Kapan-kapan saya coba teknik santan kentalnya.</p>
-                                </div>
+                    <div className="flex flex-col gap-4 animate-fade-in pt-2 border-t border-dashed border-[#e7d9cf] dark:border-[#3d2f26] mt-2" onClick={(e) => e.stopPropagation()}>
+
+                        {/* Loading State */}
+                        {commentsLoading && (
+                            <div className="flex justify-center py-4">
+                                <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Comment List */}
+                        {!commentsLoading && (
+                            <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+                                {commentsList.length === 0 ? (
+                                    <p className="text-center text-sm text-gray-400 py-2">Belum ada komentar.</p>
+                                ) : (
+                                    commentsList.map(comment => (
+                                        <CommentItem
+                                            key={comment.id}
+                                            comment={comment}
+                                            onReply={reloadComments}
+                                        />
+                                    ))
+                                )}
+                            </div>
+                        )}
 
                         {/* Comment Input */}
-                        <div className="flex gap-3 items-start">
-                            <div className="size-8 rounded-full bg-cover bg-center flex-shrink-0" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuC8J315noBaNEdtwTrAyup1A9QieHqJz5nU5XsOEsX_koP1HV2eumHSICTYGusis3uVnCIza54-2rHqpLLK5wJs7BixvGsvsgl-VAPqpCMecAc9oxCtqCkpaZRyPaTss7KxH0XJ1anh3MmtAlIvH9--DqCBvYyo4fAanLxYZZPtJJr5EQSQGjMqueSM5OqBdOw4aLBAlALIW0-95p4W3flidWv99b6oi0mkZph4_uaVkjcdqui5XlSb4bH0llSrbdEhOzw2VtAlUjFp")' }}></div>
-                            <div className="flex-grow flex gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="Tulis komentar..."
-                                    className="w-full bg-[#f8f7f6] dark:bg-[#221810] border-none rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-primary/50 text-text-main dark:text-white placeholder-gray-400 outline-none"
-                                />
-                                <button className="text-primary font-bold text-sm px-2 hover:bg-orange-50 dark:hover:bg-white/5 rounded-lg transition-colors">
-                                    Kirim
-                                </button>
-                            </div>
+                        <div className="mt-2">
+                            <CommentForm
+                                postId={id}
+                                onSuccess={reloadComments}
+                                ownerId={userId} // Post owner
+                            />
                         </div>
                     </div>
                 )}

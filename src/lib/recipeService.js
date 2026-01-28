@@ -2,7 +2,7 @@ import { supabase } from './supabaseClient';
 
 // Simple in-memory cache
 const cache = {
-    regions: null,
+    regionsPromise: null, // Singleton promise for regions
     recipes: new Map(), // key: string(params), value: { data, timestamp }
 };
 
@@ -47,29 +47,35 @@ export async function uploadRecipeImage(file, folder = '') {
 
 
 /**
- * Fetch all regions from database
+ * Fetch all regions from database (Singleton Pattern)
  * @returns {Promise<Array>} - List of regions
  */
-export async function fetchRegions() {
-    if (cache.regions) {
-        return cache.regions;
+export function fetchRegions() {
+    // Return existing promise if already fetching or fetched
+    if (cache.regionsPromise) {
+        return cache.regionsPromise;
     }
 
     console.log('🔵 Fetching regions...');
 
-    const { data, error } = await supabase
-        .from('regions')
-        .select('*')
-        .order('name');
+    // Assign slice of work to promise cache
+    cache.regionsPromise = (async () => {
+        const { data, error } = await supabase
+            .from('regions')
+            .select('*')
+            .order('name');
 
-    if (error) {
-        console.error('🔴 Error fetching regions:', error);
-        return [];
-    }
+        if (error) {
+            console.error('🔴 Error fetching regions:', error);
+            cache.regionsPromise = null; // Clear on error to allow retry
+            return [];
+        }
 
-    console.log('✅ Regions fetched:', data?.length || 0);
-    cache.regions = data || [];
-    return cache.regions;
+        console.log('✅ Regions fetched:', data?.length || 0);
+        return data || [];
+    })();
+
+    return cache.regionsPromise;
 }
 
 /**
@@ -217,6 +223,15 @@ export async function publishRecipe(recipeData, userId, isPublished = true) {
         cache.recipes.clear();
 
         console.log('✅ Recipe published successfully!');
+
+        // Fan-out notifications to followers (non-blocking)
+        try {
+            const { notifyFollowersOfUpload } = await import('./interactionService');
+            notifyFollowersOfUpload(userId, recipeId);
+        } catch (notifError) {
+            console.error('⚠️ Fan-out failed:', notifError);
+        }
+
         return recipe;
 
     } catch (error) {
@@ -224,6 +239,17 @@ export async function publishRecipe(recipeData, userId, isPublished = true) {
         throw error;
     }
 }
+
+/**
+ * Fetch recipes with filters
+ * @param {Object} options - Filter options
+ * @param {string} [options.searchQuery] - Search query for title/description
+ * @param {number} [options.regionId] - Filter by region ID
+ * @param {string} [options.userId] - Filter by user ID
+ * @param {number} [options.limit] - Limit results
+ * @returns {Promise<Array>} - List of recipes
+ */
+const inflightRequests = new Map();
 
 /**
  * Fetch recipes with filters
@@ -247,51 +273,66 @@ export async function fetchRecipes({ searchQuery = '', regionId = null, userId =
         }
     }
 
+    // Check in-flight requests
+    if (inflightRequests.has(cacheKey)) {
+        console.log('🔵 Joining in-flight recipe fetch...');
+        return inflightRequests.get(cacheKey);
+    }
+
     console.log('🔵 Fetching recipes with params:', { searchQuery, regionId, userId, limit });
 
-    let query = supabase
-        .from('recipes')
-        .select(`
-            *,
-            regions (
-                id,
-                name
-            ),
-            user_profiles:user_id (
-                full_name,
-                username,
-                avatar_url
-            )
-        `)
-        .eq('is_published', true)
-        .order('created_at', { ascending: false })
-        .limit(limit);
+    const fetchPromise = (async () => {
+        try {
+            let query = supabase
+                .from('recipes')
+                .select(`
+                    *,
+                    regions (
+                        id,
+                        name
+                    ),
+                    user_profiles:user_id (
+                        full_name,
+                        username,
+                        avatar_url
+                    )
+                `)
+                .eq('is_published', true)
+                .order('created_at', { ascending: false })
+                .limit(limit);
 
-    // Apply filters
-    if (searchQuery) {
-        query = query.ilike('title', `%${searchQuery}%`);
-    }
+            // Apply filters
+            if (searchQuery) {
+                query = query.ilike('title', `%${searchQuery}%`);
+            }
 
-    if (regionId) {
-        query = query.eq('region_id', regionId);
-    }
+            if (regionId) {
+                query = query.eq('region_id', regionId);
+            }
 
-    if (userId) {
-        query = query.eq('user_id', userId);
-    }
+            if (userId) {
+                query = query.eq('user_id', userId);
+            }
 
-    const { data, error } = await query;
+            const { data, error } = await query;
 
-    if (error) {
-        console.error('🔴 Error fetching recipes:', error);
-        return [];
-    }
+            if (error) {
+                console.error('🔴 Error fetching recipes:', error);
+                return [];
+            }
 
-    // Update cache
-    cache.recipes.set(cacheKey, { data: data || [], timestamp: Date.now() });
+            // Update cache
+            cache.recipes.set(cacheKey, { data: data || [], timestamp: Date.now() });
 
-    console.log(`✅ Fetched ${data?.length || 0} recipes`);
-    return data || [];
+            console.log(`✅ Fetched ${data?.length || 0} recipes`);
+            return data || [];
+        } finally {
+            inflightRequests.delete(cacheKey);
+        }
+    })();
+
+    inflightRequests.set(cacheKey, fetchPromise);
+    return fetchPromise;
 }
 
 /**
@@ -324,8 +365,8 @@ export async function toggleBookmark(userId, recipeId) {
             .from('bookmarks')
             .insert({ user_id: userId, recipe_id: recipeId });
 
-        // Invalidate specific caches if needed, or simple clear all for safety
-        cache.recipes.clear();
+        // Note: We do NOT clear cache.recipes here anymore to prevent refetching the main list
+        // when a user bookmarks an item. The UI should update optimistically or locally.
         return true;
     }
 }
@@ -358,4 +399,60 @@ export async function fetchBookmarkedRecipes(userId) {
 
     // Map to return just the recipe objects (flattened)
     return data.map(item => item.recipes).filter(r => r !== null);
+}
+
+/**
+ * Delete a recipe
+ */
+export async function deleteRecipe(recipeId, userId) {
+    if (!recipeId || !userId) return { error: 'Missing params' };
+
+    // Verify ownership
+    const { data: recipe } = await supabase
+        .from('recipes')
+        .select('user_id, main_image_url')
+        .eq('id', recipeId)
+        .single();
+
+    if (!recipe) return { error: 'Recipe not found' };
+    if (recipe.user_id !== userId) return { error: 'Unauthorized' };
+
+    // Delete DB row (Cascade should handle related tables)
+    const { error } = await supabase
+        .from('recipes')
+        .delete()
+        .eq('id', recipeId);
+
+    if (error) return { error };
+
+    // Optional: Delete storage images (main image + ingredients + steps)
+    // This requires parsing URLs to get paths. Skipping for MVP iteration unless requested.
+
+    return { error: null };
+}
+
+/**
+ * Get recipe details for editing (includes raw data structure)
+ */
+export async function getRecipeForEdit(recipeId) {
+    const { data: recipe, error } = await supabase
+        .from('recipes')
+        .select(`
+            *,
+            recipe_ingredients (*),
+            recipe_steps (*),
+            recipe_tags (*)
+        `)
+        .eq('id', recipeId)
+        .single();
+
+    if (error) throw error;
+
+    // Transform to match uploading structure
+    return {
+        ...recipe,
+        ingredients: recipe.recipe_ingredients.sort((a, b) => a.order_index - b.order_index),
+        steps: recipe.recipe_steps.sort((a, b) => a.step_number - b.step_number),
+        tags: recipe.recipe_tags.map(t => t.tag_name)
+    };
 }

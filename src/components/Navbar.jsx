@@ -3,27 +3,64 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SearchDropdown from './SearchDropdown';
 import SearchMobileModal from './SearchMobileModal';
+import ConfirmationModal from './ConfirmationModal';
 
 const Navbar = ({ darkMode, setDarkMode }) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
     const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const profileRef = useRef(null);
     const searchRef = useRef(null);
     const navigate = useNavigate();
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const { user, profile, loading, signOut } = useAuth();
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchUnread = async () => {
+            if (user?.id) {
+                const { supabase } = await import('../lib/supabaseClient');
+                const { count } = await supabase
+                    .from('notifications')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id)
+                    .eq('is_read', false);
+
+                if (isMounted && count !== null) {
+                    setUnreadCount(count);
+                }
+            }
+        };
+
+        fetchUnread();
+
+        // Optional: Polling every 30s
+        const interval = setInterval(fetchUnread, 30000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, [user]);
 
     const closeSearch = () => {
         setIsSearchModalOpen(false);
         setIsMobileSearchOpen(false);
     };
 
-    const handleSignOut = async () => {
-        await signOut();
+    const handleSignOut = () => {
         setIsProfileOpen(false);
-        navigate('/login');
+        setIsLogoutModalOpen(true);
+    };
+
+    const confirmSignOut = async () => {
+        await signOut();
+        setIsLogoutModalOpen(false);
+        navigate('/');
     };
 
     // Handle click outside to close dropdowns
@@ -152,9 +189,16 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                 </button>
 
                 {/* Notifications */}
-                <button className="hidden sm:flex text-text-main dark:text-[#f3ece7] p-2 hover:bg-background-light dark:hover:bg-border-dark rounded-full transition-colors">
-                    <span className="material-symbols-outlined">notifications</span>
-                </button>
+                <Link to="/notifications" className="p-2 rounded-full hover:bg-background-light dark:hover:bg-border-dark text-text-main dark:text-[#f3ece7] transition-all flex items-center justify-center relative group" title="Lihat Notifikasi">
+                    <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
+                        {unreadCount > 0 ? 'notifications_active' : 'notifications'}
+                    </span>
+                    {unreadCount > 0 && (
+                        <div className="absolute top-1 left-5 bg-primary text-white text-[10px] font-bold px-1 h-4 min-w-[16px] flex items-center justify-center rounded-full border-2 border-background-light dark:border-background-dark shadow-sm animate-in zoom-in duration-300">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                        </div>
+                    )}
+                </Link>
 
                 {/* User Profile Thumbnail & Dropdown (Rightmost) */}
                 {user ? (
@@ -220,6 +264,17 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 onSearch={handleSearchNav}
+            />
+
+            <ConfirmationModal
+                isOpen={isLogoutModalOpen}
+                onClose={() => setIsLogoutModalOpen(false)}
+                onConfirm={confirmSignOut}
+                title="Keluar dari Akun?"
+                message="Apakah Anda yakin ingin keluar dari akun Anda? Anda harus masuk kembali untuk mengakses fitur personal."
+                confirmText="Keluar"
+                cancelText="Batal"
+                isDanger={true}
             />
         </header>
     );

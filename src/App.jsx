@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { RecipeProvider } from './context/RecipeContext';
+import { SocialProvider } from './context/SocialContext';
+import { BookmarkProvider } from './context/BookmarkContext';
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
 import Footer from './components/Footer';
@@ -17,6 +19,7 @@ import PublicProfile from './pages/PublicProfile';
 import Community from './pages/Community';
 import UploadRecipe from './pages/UploadRecipe';
 import PostDetail from './pages/PostDetail';
+import NotificationPage from './pages/NotificationPage';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -24,9 +27,13 @@ const App = () => {
   return (
     <AuthProvider>
       <RecipeProvider>
-        <Router>
-          <MainLayout darkMode={darkMode} setDarkMode={setDarkMode} />
-        </Router>
+        <SocialProvider>
+          <BookmarkProvider>
+            <Router>
+              <MainLayout darkMode={darkMode} setDarkMode={setDarkMode} />
+            </Router>
+          </BookmarkProvider>
+        </SocialProvider>
       </RecipeProvider>
     </AuthProvider>
   );
@@ -71,6 +78,7 @@ const AppContent = ({ darkMode, setDarkMode }) => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/public-profile" element={<PublicProfile />} />
           <Route path="/upload-recipe" element={<UploadRecipe />} />
+          <Route path="/notifications" element={<NotificationPage />} />
         </Routes>
       </main>
 

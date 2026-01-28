@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useSocial } from '../context/SocialContext';
+import { useBookmarks } from '../context/BookmarkContext';
+import CommentItem from '../components/CommentItem';
+import CommentForm from '../components/CommentForm';
 
 const RecipeDetail = () => {
     const { id } = useParams();
@@ -12,23 +16,68 @@ const RecipeDetail = () => {
     const [author, setAuthor] = useState(null);
     const [loading, setLoading] = useState(true);
     const { user } = useAuth();
+    const { isFollowing, updateFollowingStatus } = useSocial();
+    const { isBookmarked, toggleBookmark } = useBookmarks();
     const [selectedImage, setSelectedImage] = useState(null);
-    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [isRecipeBookmarked, setIsRecipeBookmarked] = useState(false);
+    const [userIsFollowing, setUserIsFollowing] = useState(false);
+    const [followLoading, setFollowLoading] = useState(false);
+    const [comments, setComments] = useState([]);
+
+    // Ref to prevent duplicate fetch on mount (React StrictMode safety)
+    const lastFetchedRecipeIdRef = React.useRef(null);
+
+    const checkFollow = (followingId) => {
+        if (user && followingId) {
+            // Use cached follow status from context (O(1) lookup)
+            const status = isFollowing(followingId);
+            setUserIsFollowing(status);
+        }
+    };
+
+    const handleFollowToggle = async () => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+
+        setFollowLoading(true);
+        try {
+            const { toggleFollow } = await import('../lib/interactionService');
+            const newStatus = await toggleFollow(user.id, author.id);
+            setUserIsFollowing(newStatus);
+            updateFollowingStatus(author.id, newStatus);
+        } catch (error) {
+            console.error('Error toggling follow:', error);
+        } finally {
+            setFollowLoading(false);
+        }
+    };
+
+    const reloadComments = async () => {
+        if (id) {
+            const { fetchComments } = await import('../lib/interactionService');
+            const data = await fetchComments(id);
+            setComments(data);
+        }
+    };
 
     useEffect(() => {
-        const checkBookmarkStatus = async () => {
-            if (user && id) {
-                const { data } = await supabase
-                    .from('bookmarks')
-                    .select('id')
-                    .eq('user_id', user.id)
-                    .eq('recipe_id', id)
-                    .single();
-                setIsBookmarked(!!data);
-            }
-        };
-        checkBookmarkStatus();
-    }, [user, id]);
+        reloadComments();
+    }, [id]);
+
+    useEffect(() => {
+        // Prevent duplicate fetch during Strict Mode double-mount
+        if (lastFetchedRecipeIdRef.current === id && user?.id) {
+            setIsRecipeBookmarked(isBookmarked(id));
+            return;
+        }
+
+        if (user && id) {
+            lastFetchedRecipeIdRef.current = id;
+            setIsRecipeBookmarked(isBookmarked(id));
+        }
+    }, [user, id, isBookmarked]);
 
     const handleBookmark = async () => {
         if (!user) {
@@ -37,9 +86,10 @@ const RecipeDetail = () => {
         }
 
         try {
-            const { toggleBookmark } = await import('../lib/recipeService');
-            const result = await toggleBookmark(user.id, id);
-            setIsBookmarked(result);
+            const { toggleBookmark: toggleBookmarkService } = await import('../lib/recipeService');
+            const result = await toggleBookmarkService(user.id, id);
+            setIsRecipeBookmarked(result);
+            toggleBookmark(id, result);
 
             // Optional: Show toast notification
             console.log(result ? 'Bookmarked' : 'Bookmark removed');
@@ -70,12 +120,15 @@ const RecipeDetail = () => {
         const fetchRecipe = async () => {
             setLoading(true);
 
-            // Fetch recipe with region
+            // Fetch recipe with all relations in ONE query (waterfall fix)
             const { data: recipeData, error: recipeError } = await supabase
                 .from('recipes')
                 .select(`
                     *,
-                    regions(name)
+                    regions(name),
+                    user_profiles:user_id(*),
+                    recipe_ingredients(*),
+                    recipe_steps(*)
                 `)
                 .eq('id', id)
                 .single();
@@ -86,34 +139,25 @@ const RecipeDetail = () => {
                 return;
             }
 
+            // Set main recipe data
             setRecipe(recipeData);
 
-            // Fetch author profile
-            const { data: authorData } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', recipeData.user_id)
-                .single();
-
+            // Set Author (joined data)
+            const authorData = recipeData.user_profiles;
             setAuthor(authorData);
+            if (authorData) {
+                checkFollow(authorData.id);
+            }
 
-            // Fetch ingredients
-            const { data: ingredientsData } = await supabase
-                .from('recipe_ingredients')
-                .select('*')
-                .eq('recipe_id', id)
-                .order('order_index');
+            // Set Ingredients (joined data) - Sort locally
+            const sortedIngredients = (recipeData.recipe_ingredients || [])
+                .sort((a, b) => a.order_index - b.order_index);
+            setIngredients(sortedIngredients);
 
-            setIngredients(ingredientsData || []);
-
-            // Fetch steps
-            const { data: stepsData } = await supabase
-                .from('recipe_steps')
-                .select('*')
-                .eq('recipe_id', id)
-                .order('step_number');
-
-            setSteps(stepsData || []);
+            // Set Steps (joined data) - Sort locally
+            const sortedSteps = (recipeData.recipe_steps || [])
+                .sort((a, b) => a.step_number - b.step_number);
+            setSteps(sortedSteps);
 
             setLoading(false);
         };
@@ -199,11 +243,11 @@ const RecipeDetail = () => {
                         <div className="absolute top-4 right-4 flex gap-2">
                             <button
                                 onClick={handleBookmark}
-                                className={`bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-sm p-2 rounded-full hover:scale-110 transition-all shadow-sm ${isBookmarked ? 'text-primary' : 'text-text-main dark:text-gray-200 hover:text-primary'}`}
-                                title={isBookmarked ? "Hapus Bookmark" : "Simpan Resep"}
+                                className={`bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-sm p-2 rounded-full hover:scale-110 transition-all shadow-sm ${isRecipeBookmarked ? 'text-primary' : 'text-text-main dark:text-gray-200 hover:text-primary'}`}
+                                title={isRecipeBookmarked ? "Hapus Bookmark" : "Simpan Resep"}
                             >
-                                <span className={`material-symbols-outlined ${isBookmarked ? 'fill-current' : ''}`}>
-                                    {isBookmarked ? 'bookmark' : 'bookmark_border'}
+                                <span className={`material-symbols-outlined ${isRecipeBookmarked ? 'fill-current' : ''}`}>
+                                    {isRecipeBookmarked ? 'bookmark' : 'bookmark_border'}
                                 </span>
                             </button>
                             <button
@@ -213,6 +257,27 @@ const RecipeDetail = () => {
                             >
                                 <span className="material-symbols-outlined">share</span>
                             </button>
+                            {user && recipe?.user_id === user.id && (
+                                <>
+                                    <button
+                                        onClick={async () => {
+                                            if (confirm('Apakah Anda yakin ingin menghapus resep ini? Tindakan ini tidak dapat dibatalkan.')) {
+                                                const { deleteRecipe } = await import('../lib/recipeService');
+                                                const { error } = await deleteRecipe(id, user.id);
+                                                if (error) {
+                                                    alert('Gagal menghapus resep: ' + error.message);
+                                                } else {
+                                                    navigate('/profile', { replace: true });
+                                                }
+                                            }
+                                        }}
+                                        className="bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-sm p-2 rounded-full text-text-main dark:text-gray-200 hover:text-red-500 hover:scale-110 transition-all shadow-sm"
+                                        title="Hapus Resep"
+                                    >
+                                        <span className="material-symbols-outlined">delete</span>
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -229,24 +294,40 @@ const RecipeDetail = () => {
                             <h1 className="text-3xl md:text-4xl font-extrabold text-text-main dark:text-white leading-tight mb-4">
                                 {recipe.title}
                             </h1>
-                            <p className="text-text-secondary dark:text-gray-400 text-sm md:text-base mb-6 line-clamp-3 leading-relaxed">
+                            <p className="text-text-secondary dark:text-gray-400 text-sm md:text-base mb-6 line-clamp-6 leading-relaxed">
                                 {recipe.description || 'Tidak ada deskripsi.'}
                             </p>
+                        </div>
 
-                            {/* Author Info */}
-                            {author && (
-                                <div className="flex items-center gap-3 mb-6 p-3 bg-background-light dark:bg-background-dark rounded-xl border border-border-light dark:border-border-dark">
-                                    <div className="w-12 h-12 rounded-full bg-cover bg-center" style={{ backgroundImage: `url('${authorAvatar}')` }}></div>
+                        {/* Author Info */}
+                        {author && (
+                            <div className="flex items-center gap-3 mt-auto p-3 bg-background-light dark:bg-background-dark rounded-xl border border-border-light dark:border-border-dark">
+                                <Link to={`/public-profile?id=${author.id}`} className="flex items-center gap-3 flex-1 group">
+                                    <div className="w-12 h-12 rounded-full bg-cover bg-center ring-2 ring-transparent group-hover:ring-primary/20 transition-all" style={{ backgroundImage: `url('${authorAvatar}')` }}></div>
                                     <div className="flex-1">
-                                        <p className="text-sm font-bold text-text-main dark:text-white">{author.full_name || author.username || 'Pengguna'}</p>
+                                        <p className="text-sm font-bold text-text-main dark:text-white group-hover:text-primary transition-colors">{author.full_name || author.username || 'Pengguna'}</p>
                                         <p className="text-xs text-text-secondary dark:text-gray-400">{author.location || 'Indonesia'}</p>
                                     </div>
-                                    <button className="text-primary text-sm font-bold px-3 py-1.5 hover:bg-primary/10 rounded-lg transition-colors">
-                                        Follow
+                                </Link>
+
+                                {user?.id !== author.id && (
+                                    <button
+                                        onClick={handleFollowToggle}
+                                        disabled={followLoading}
+                                        className={`text-sm font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center min-w-[80px] ${userIsFollowing
+                                            ? 'bg-transparent text-primary hover:bg-primary/10 border border-primary/20'
+                                            : 'bg-primary text-white hover:bg-primary-dark'
+                                            }`}
+                                    >
+                                        {followLoading ? (
+                                            <div className="size-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            userIsFollowing ? 'Mengikuti' : 'Ikuti'
+                                        )}
                                     </button>
-                                </div>
-                            )}
-                        </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -321,6 +402,40 @@ const RecipeDetail = () => {
                                             )}
                                         </div>
                                     </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Comments Section in a separate card */}
+                    <div className="mt-8 bg-white dark:bg-surface-dark p-6 md:p-8 rounded-2xl shadow-sm border border-border-light dark:border-border-dark">
+                        <div className="flex items-center gap-3 mb-8">
+                            <h3 className="text-xl font-bold text-text-main dark:text-white">Komentar ({comments.length})</h3>
+                        </div>
+
+                        {/* Main Comment Form */}
+                        <div className="mb-10">
+                            <CommentForm
+                                recipeId={id}
+                                onSuccess={reloadComments}
+                                recipeOwnerId={recipe?.user_id}
+                            />
+                        </div>
+
+                        {/* Comment List */}
+                        <div className="space-y-8">
+                            {comments.length === 0 ? (
+                                <div className="text-center py-10 bg-gray-50 dark:bg-surface-dark/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
+                                    <span className="material-symbols-outlined text-gray-300 text-5xl mb-3">chat_bubble_outline</span>
+                                    <p className="text-text-secondary">Belum ada komentar. Jadilah yang pertama!</p>
+                                </div>
+                            ) : (
+                                comments.map(comment => (
+                                    <CommentItem
+                                        key={comment.id}
+                                        comment={comment}
+                                        onReply={reloadComments}
+                                    />
                                 ))
                             )}
                         </div>

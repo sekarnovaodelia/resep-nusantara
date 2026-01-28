@@ -1,63 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { fetchRecipes, fetchRegions } from '../lib/recipeService';
 import { useAuth } from '../context/AuthContext';
+import { useBookmarks } from '../context/BookmarkContext';
 
 const Home = () => {
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams(); // Destructure setSearchParams to update URL properly without reload
     const searchQuery = searchParams.get('search') || '';
+    const navigate = useNavigate();
 
     const [recipes, setRecipes] = useState([]);
     const [regions, setRegions] = useState([]);
     const [selectedRegionId, setSelectedRegionId] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [bookmarkedRecipeIds, setBookmarkedRecipeIds] = useState(new Set());
     const { user } = useAuth();
-
-    // Fetch user bookmarks to sync UI
-    useEffect(() => {
-        if (user) {
-            const loadBookmarks = async () => {
-                const { supabase } = await import('../lib/supabaseClient');
-                const { data } = await supabase
-                    .from('bookmarks')
-                    .select('recipe_id')
-                    .eq('user_id', user.id);
-
-                if (data) {
-                    setBookmarkedRecipeIds(new Set(data.map(b => b.recipe_id)));
-                }
-            };
-            loadBookmarks();
-        } else {
-            setBookmarkedRecipeIds(new Set());
-        }
-    }, [user]);
+    const { bookmarkedRecipeIds, toggleBookmark } = useBookmarks();
 
     const handleBookmarkToggle = async (recipeId) => {
         if (!user) {
             // redir to login or show toast
-            window.location.href = '/login';
+            navigate('/login');
             return;
         }
 
-        // Optimistic update
-        setBookmarkedRecipeIds(prev => {
-            const next = new Set(prev);
-            if (next.has(recipeId)) {
-                next.delete(recipeId);
-            } else {
-                next.add(recipeId);
-            }
-            return next;
-        });
+        // Optimistic update using context
+        const isCurrentlyBookmarked = bookmarkedRecipeIds.has(recipeId);
+        toggleBookmark(recipeId, !isCurrentlyBookmarked);
 
         try {
-            const { toggleBookmark } = await import('../lib/recipeService');
-            await toggleBookmark(user.id, recipeId);
+            const { toggleBookmark: toggleBookmarkService } = await import('../lib/recipeService');
+            await toggleBookmarkService(user.id, recipeId);
         } catch (error) {
             console.error('Bookmark error:', error);
-            // Revert on error (could implement)
+            // Revert on error
+            toggleBookmark(recipeId, isCurrentlyBookmarked);
         }
     };
 
@@ -72,6 +48,7 @@ const Home = () => {
 
     // Fetch recipes when search or region changes
     useEffect(() => {
+        let mounted = true;
         const loadRecipes = async () => {
             setLoading(true);
             try {
@@ -80,15 +57,18 @@ const Home = () => {
                     regionId: selectedRegionId,
                     limit: 10
                 });
-                setRecipes(data);
+                if (mounted) {
+                    setRecipes(data);
+                }
             } catch (error) {
-                console.error('Error loading recipes:', error);
+                if (mounted) console.error('Error loading recipes:', error);
             } finally {
-                setLoading(false);
+                if (mounted) setLoading(false);
             }
         };
 
         loadRecipes();
+        return () => { mounted = false; };
     }, [searchQuery, selectedRegionId]);
 
     const handleRegionClick = (id) => {
@@ -141,15 +121,56 @@ const Home = () => {
                 </section>
             )}
 
-            {/* Main Content Grid */}
-            <div className="flex flex-col lg:flex-row gap-10">
-                <div className="w-full lg:w-3/4 flex flex-col gap-8">
-                    <div className="flex items-center justify-between pb-4 border-b border-primary/20">
-                        <div className="flex items-center gap-3">
+            {/* Region Filter - Full Width Above Grid */}
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-primary/20">
+                    <span className="material-symbols-outlined text-primary">public</span>
+                    <h3 className="text-text-main dark:text-white tracking-tight text-xl font-bold leading-tight">Jelajah Masa</h3>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
+                    {regions.map((region) => (
+                        <button
+                            key={region.id}
+                            onClick={() => handleRegionClick(region.id)}
+                            className={`px-5 py-2.5 rounded-full border text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 ${selectedRegionId === region.id
+                                ? 'bg-primary border-primary text-white shadow-md transform scale-105'
+                                : 'bg-background-light dark:bg-accent-dark border-primary/10 hover:bg-primary/10 hover:border-primary hover:text-primary text-text-main dark:text-white'
+                                }`}
+                        >
+                            {region.name}
+                        </button>
+                    ))}
+                    {regions.length === 0 && <div className="flex gap-2"><div className="w-20 h-10 bg-gray-100 rounded-full animate-pulse"></div><div className="w-24 h-10 bg-gray-100 rounded-full animate-pulse"></div></div>}
+                </div>
+            </div>
+
+            {/* Main Content Grid & Sidebar */}
+            <div className="flex flex-col gap-10">
+                <div className="w-full flex flex-col gap-8">
+
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-4 border-b border-primary/20">
+                        <div className="flex items-center gap-3 self-start md:self-auto">
                             <span className="w-2 h-8 bg-primary rounded-full"></span>
                             <h2 className="text-text-main dark:text-white tracking-tight text-[28px] font-bold leading-tight">
                                 {searchQuery ? `Hasil Pencarian: "${searchQuery}"` : 'Jelajah Resep'}
                             </h2>
+                        </div>
+
+                        {/* Chef Recommendation - Moved here */}
+                        <div className="flex gap-4 items-center bg-accent dark:bg-accent-dark/30 p-2 rounded-xl border border-primary/10 self-stretch md:self-auto">
+                            <span className="text-xs font-bold uppercase tracking-wider text-primary px-2">Rekomendasi Chef</span>
+                            <div className="w-px h-8 bg-primary/20"></div>
+                            {[
+                                { title: "Nasi Goreng Kampung", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuByg5jxqle7nHuppOMXhJdVandrhYIwOq7fTwtbeaba8yyTIiqU3TNyuCvQWF79BQ5NrtxpLXjpgXf_iunQW-e9P2kffyxRbBZGHTsXRn1PDX5HKVh5LAAB6tnvxACjc6m-ejxqHuVh4JQuT5JcS2PmRa3Blrnfc_L9D3iG6rEYpc_DkqH1SQdYAG-K9ShUzH54WEw_-9PpouzEbbggzLzaxQPXiezdbjKUbgVmVbyE8b3yTwr1XEGMEhPKUFtTJnqgYCa97428IAhE" },
+                            ].map((chefRec, idx) => (
+                                <div key={idx} className="flex gap-3 items-center group cursor-pointer hover:opacity-80 transition-all">
+                                    <div className="w-10 h-10 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: `url("${chefRec.img}")` }}></div>
+                                    <div className="flex flex-col w-32 lg:w-40">
+                                        <h4 className="text-text-main dark:text-white font-bold text-xs leading-tight truncate">{chefRec.title}</h4>
+                                        <span className="text-[10px] text-text-secondary">Coba sekarang</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -158,51 +179,45 @@ const Home = () => {
                             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                         </div>
                     ) : recipes.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-10">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
                             {recipes.map((recipe) => (
-                                <Link to={`/recipe/${recipe.id}`} key={recipe.id} className="group flex flex-col gap-3 cursor-pointer">
-                                    <div className="w-full overflow-hidden rounded-2xl aspect-[4/3] relative shadow-md group-hover:shadow-xl transition-all duration-300">
+                                <div onClick={() => navigate(`/recipe/${recipe.id}`)} key={recipe.id} className="group flex flex-col gap-2 cursor-pointer relative">
+                                    <div className="w-full overflow-hidden rounded-xl aspect-square relative shadow-sm border border-gray-100 dark:border-gray-800">
                                         <div className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url("${recipe.main_image_url || 'https://placehold.co/600x400'}")` }}></div>
                                         {recipe.regions?.name && (
-                                            <div className="absolute top-3 left-3">
-                                                <span className="bg-white/90 dark:bg-black/70 backdrop-blur px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-text-main dark:text-white">{recipe.regions.name}</span>
+                                            <div className="absolute top-2 left-2">
+                                                <span className="bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-text-main dark:text-white shadow-sm">{recipe.regions.name}</span>
                                             </div>
                                         )}
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-                                                // Handle bookmark logic here - ideally passed from parent or context
-                                                // For now, let's navigate to detail to bookmark as feed bookmarking requires complex state sync
-                                                // OR implement a simple quick toggle if we have the data.
-                                                // Given the complexity of sync, and user request "bisa di klik bookmark", let's assume detail workflow is safer OR implement full feed logic.
-                                                // Let's try to implement full feed logic by loading bookmarks.
                                                 handleBookmarkToggle(recipe.id);
                                             }}
-                                            className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur transition-colors ${bookmarkedRecipeIds.has(recipe.id) ? 'bg-primary/20 text-primary hover:bg-primary/30' : 'bg-white/20 text-white hover:bg-white/40'}`}
+                                            className={`absolute top-2 right-2 p-1.5 rounded-full backdrop-blur transition-colors shadow-sm ${bookmarkedRecipeIds.has(recipe.id) ? 'bg-primary/20 text-primary hover:bg-primary/30' : 'bg-white/30 text-white hover:bg-white/50'}`}
                                         >
                                             <span className={`material-symbols-outlined text-[18px] ${bookmarkedRecipeIds.has(recipe.id) ? 'fill-current' : ''}`}>
                                                 {bookmarkedRecipeIds.has(recipe.id) ? 'bookmark' : 'bookmark_border'}
                                             </span>
                                         </button>
                                     </div>
-                                    <div>
-                                        <div className="flex justify-between items-start mb-1 gap-2">
-                                            <h3 className="text-text-main dark:text-white text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">{recipe.title}</h3>
+                                    <div className="px-1">
+                                        <h3 className="text-text-main dark:text-white text-sm md:text-lg font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-1">{recipe.title}</h3>
+                                        <div className="flex items-center gap-1.5 relative z-10">
+                                            <Link
+                                                to={`/public-profile?id=${recipe.user_id}`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                                            >
+                                                <div className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 bg-cover bg-center shrink-0" style={{ backgroundImage: `url("${recipe.user_profiles?.avatar_url || 'https://placehold.co/100x100'}")` }}></div>
+                                                <p className="text-[10px] md:text-xs text-text-sub dark:text-gray-400 font-medium truncate max-w-[80px] md:max-w-none hover:underline">
+                                                    {recipe.user_profiles?.full_name || 'Chef'}
+                                                </p>
+                                            </Link>
                                         </div>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 bg-cover bg-center" style={{ backgroundImage: `url("${recipe.user_profiles?.avatar_url || 'https://placehold.co/100x100'}")` }}></div>
-                                            <p className="text-xs text-text-secondary dark:text-gray-400 font-medium truncate">
-                                                {recipe.user_profiles?.full_name || 'Chef'}
-                                            </p>
-                                        </div>
-                                        {recipe.regions?.name && (
-                                            <p className="text-text-secondary dark:text-gray-400 text-sm flex items-center gap-1 mt-2">
-                                                <span className="material-symbols-outlined text-[14px]">location_on</span> {recipe.regions.name}
-                                            </p>
-                                        )}
                                     </div>
-                                </Link>
+                                </div>
                             ))}
                         </div>
                     ) : (
@@ -215,7 +230,7 @@ const Home = () => {
                                         setSelectedRegionId(null);
                                         window.history.pushState({}, '', '/');
                                         // Force reload or just clear search params via navigation if using useNavigate
-                                        window.location.href = '/';
+                                        navigate('/');
                                     }}
                                     className="mt-4 text-primary font-bold text-sm hover:underline"
                                 >
@@ -225,51 +240,8 @@ const Home = () => {
                         </div>
                     )}
                 </div>
-
-                <aside className="w-full lg:w-1/4 flex flex-col gap-10">
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-2 pb-2 border-b border-primary/20">
-                            <span className="material-symbols-outlined text-primary">public</span>
-                            <h3 className="text-text-main dark:text-white tracking-tight text-xl font-bold leading-tight">Jelajah Masa</h3>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {regions.map((region) => (
-                                <button
-                                    key={region.id}
-                                    onClick={() => handleRegionClick(region.id)}
-                                    className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${selectedRegionId === region.id
-                                        ? 'bg-primary border-primary text-white shadow-md'
-                                        : 'bg-background-light dark:bg-accent-dark border-primary/10 hover:bg-primary/10 hover:border-primary hover:text-primary text-text-main dark:text-white'
-                                        }`}
-                                >
-                                    {region.name}
-                                </button>
-                            ))}
-                            {regions.length === 0 && <p className="text-sm text-gray-500">Memuat wilayah...</p>}
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-5 p-5 rounded-2xl bg-accent dark:bg-accent-dark/30 border border-primary/10">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-text-main dark:text-white tracking-tight text-lg font-bold leading-tight">Rekomendasi Chef</h3>
-                            <span className="text-xs font-medium text-primary cursor-pointer hover:underline">Lihat Semua</span>
-                        </div>
-                        <div className="flex flex-col gap-4">
-                            {[
-                                { title: "Nasi Goreng Kampung", time: "20m", rating: "4.5", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuByg5jxqle7nHuppOMXhJdVandrhYIwOq7fTwtbeaba8yyTIiqU3TNyuCvQWF79BQ5NrtxpLXjpgXf_iunQW-e9P2kffyxRbBZGHTsXRn1PDX5HKVh5LAAB6tnvxACjc6m-ejxqHuVh4JQuT5JcS2PmRa3Blrnfc_L9D3iG6rEYpc_DkqH1SQdYAG-K9ShUzH54WEw_-9PpouzEbbggzLzaxQPXiezdbjKUbgVmVbyE8b3yTwr1XEGMEhPKUFtTJnqgYCa97428IAhE" },
-                            ].map((chefRec, idx) => (
-                                <div key={idx} className="flex gap-4 items-center group cursor-pointer bg-background-light dark:bg-accent-dark p-2 rounded-xl hover:shadow-md transition-all">
-                                    <div className="w-16 h-16 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: `url("${chefRec.img}")` }}></div>
-                                    <div className="flex flex-col gap-1 w-full">
-                                        <h4 className="text-text-main dark:text-white font-bold text-sm leading-tight group-hover:text-primary transition-colors line-clamp-1">{chefRec.title}</h4>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </aside>
             </div>
-        </main>
+        </main >
     );
 };
 

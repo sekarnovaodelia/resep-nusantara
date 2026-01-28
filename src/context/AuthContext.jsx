@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
     const fetchingProfileId = React.useRef(null);
 
     // Initial load & Auth Listener
+    // Initial load & Auth Listener
     useEffect(() => {
         let mounted = true;
 
@@ -25,10 +26,9 @@ export const AuthProvider = ({ children }) => {
             if (mounted) {
                 setSession(initialSession);
                 setUser(initialSession?.user ?? null);
-                if (initialSession?.user) {
-                    await fetchProfileInternal(initialSession.user.id);
+                if (!initialSession?.user) {
+                    setLoading(false);
                 }
-                setLoading(false);
             }
 
             // 2. Setup listener
@@ -40,12 +40,8 @@ export const AuthProvider = ({ children }) => {
                     setSession(currentSession);
                     setUser(currentSession?.user ?? null);
 
-                    if (currentSession?.user) {
-                        // Only fetch if not already fetched/fetching for this user
-                        await fetchProfileInternal(currentSession.user.id);
-                    } else {
+                    if (!currentSession?.user) {
                         setProfile(null);
-                        fetchingProfileId.current = null;
                         setLoading(false);
                     }
                 }
@@ -59,6 +55,15 @@ export const AuthProvider = ({ children }) => {
 
         initAuth();
     }, []);
+
+    // Fetch profile when user changes
+    useEffect(() => {
+        if (user?.id) {
+            fetchProfileInternal(user.id);
+        } else {
+            fetchingProfileId.current = null;
+        }
+    }, [user?.id]);
 
     const fetchProfileInternal = async (userId) => {
         // Prevent redundant fetches for same user
@@ -83,6 +88,8 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             console.error('🔴 Unexpected error:', error);
             setProfile(null);
+        } finally {
+            setLoading(false);
         }
     };
 

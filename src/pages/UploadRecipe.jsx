@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useRecipe } from '../context/RecipeContext';
 import { useAuth } from '../context/AuthContext';
 import { publishRecipe } from '../lib/recipeService';
@@ -13,15 +13,20 @@ const UploadRecipe = () => {
     const [currentStep, setCurrentStep] = useState(1);
     const [isPublishing, setIsPublishing] = useState(false);
 
+    // Handle Edit Mode
+    const [searchParams] = useSearchParams();
+    const editId = searchParams.get('edit');
+
     // Context Data
     const {
-        title,
-        description,
-        mainImageFile,
-        regionId,
-        ingredients,
-        steps,
-        tags,
+        title, setTitle,
+        description, setDescription,
+        mainImageFile, setMainImageFile,
+        mainImagePreview, setMainImagePreview,
+        regionId, setRegionId,
+        ingredients, setIngredients,
+        steps, setSteps,
+        tags, setTags,
         resetForm,
     } = useRecipe();
 
@@ -30,6 +35,7 @@ const UploadRecipe = () => {
         title,
         description,
         mainImageFile,
+        mainImageUrl: mainImagePreview, // Pass existing URL if file is null (for updates)
         regionId,
         ingredients,
         steps,
@@ -40,6 +46,55 @@ const UploadRecipe = () => {
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [currentStep]);
+
+    // Load Data for Edit
+    useEffect(() => {
+        const loadForEdit = async () => {
+            if (editId && user) {
+                try {
+                    const { getRecipeForEdit } = await import('../lib/recipeService');
+                    const recipe = await getRecipeForEdit(editId);
+
+                    if (recipe.user_id !== user.id) {
+                        alert('Anda tidak berhak mengedit resep ini.');
+                        navigate('/');
+                        return;
+                    }
+
+                    // Populate Context
+                    setTitle(recipe.title);
+                    setDescription(recipe.description || '');
+                    setMainImagePreview(recipe.main_image_url);
+                    setMainImageFile(null); // Reset file input
+                    setRegionId(recipe.region_id);
+
+                    // Map ingredients
+                    const mappedIngredients = recipe.ingredients.map(ing => ({
+                        name: ing.name,
+                        quantity: ing.quantity || '',
+                        imageFile: null,
+                        imagePreview: ing.image_url
+                    }));
+                    setIngredients(mappedIngredients.length > 0 ? mappedIngredients : [{ name: '', quantity: '', imageFile: null, imagePreview: null }]);
+
+                    // Map steps
+                    const mappedSteps = recipe.steps.map(step => ({
+                        description: step.description,
+                        imageFile: null,
+                        imagePreview: step.image_url
+                    }));
+                    setSteps(mappedSteps.length > 0 ? mappedSteps : [{ description: '', imageFile: null, imagePreview: null }]);
+
+                    setTags(recipe.tags || []);
+
+                } catch (error) {
+                    console.error('Error loading recipe for edit:', error);
+                    alert('Gagal memuat resep untuk diedit.');
+                }
+            }
+        };
+        loadForEdit();
+    }, [editId, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Handlers
     const nextToStep2 = () => {
@@ -74,6 +129,26 @@ const UploadRecipe = () => {
             return;
         }
 
+        if (editId) {
+            // UPDATE Logic
+            if (!confirm(`Apakah Anda yakin ingin menyimpan perubahan pada resep ini?`)) return;
+            setIsPublishing(true);
+            try {
+                const { updateRecipe } = await import('../lib/recipeService');
+                await updateRecipe(editId, fullRecipeData, user.id);
+                alert('Resep berhasil diperbarui!');
+                resetForm();
+                navigate(`/recipe/${editId}`, { replace: true });
+            } catch (error) {
+                console.error('🔴 Update error:', error);
+                alert(`Gagal memperbarui resep: ${error.message}`);
+            } finally {
+                setIsPublishing(false);
+            }
+            return;
+        }
+
+        // CREATE Logic
         const actionText = isPublished ? 'mempublish' : 'menyimpan draft';
         if (!confirm(`Apakah Anda yakin ingin ${actionText} resep ini?`)) return;
 
@@ -103,7 +178,7 @@ const UploadRecipe = () => {
                     >
                         <span className="material-symbols-outlined text-2xl">arrow_back</span>
                     </button>
-                    <h2 className="text-xl font-bold text-text-main dark:text-white tracking-tight">Upload Resep</h2>
+                    <h2 className="text-xl font-bold text-text-main dark:text-white tracking-tight">{editId ? 'Edit Resep' : 'Upload Resep'}</h2>
                 </div>
             </div>
 
@@ -137,7 +212,7 @@ const UploadRecipe = () => {
                 <div className="w-full mx-auto">
                     {currentStep === 1 && <StepInfo onNext={nextToStep2} />}
                     {currentStep === 2 && <StepIngredients onNext={nextToStep3} onBack={() => setCurrentStep(1)} />}
-                    {currentStep === 3 && <StepSteps onBack={() => setCurrentStep(2)} onPublish={handlePublish} isPublishing={isPublishing} />}
+                    {currentStep === 3 && <StepSteps onBack={() => setCurrentStep(2)} onPublish={handlePublish} isPublishing={isPublishing} isEditing={!!editId} />}
                 </div>
             </main>
         </div>

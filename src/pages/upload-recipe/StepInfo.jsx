@@ -88,7 +88,17 @@ const StepInfo = ({ onNext }) => {
                 </div>
                 <div className="flex flex-col gap-3">
                     <label className="text-sm font-bold text-text-main dark:text-white">Cerita</label>
-                    <textarea className="w-full rounded-xl p-4 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark outline-none focus:ring-2 focus:ring-primary/50" placeholder="Ceritakan sejarah..." rows="4" value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
+                    <textarea
+                        className="w-full rounded-xl p-4 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark outline-none focus:ring-2 focus:ring-primary/50"
+                        placeholder="Ceritakan sejarah..."
+                        rows="4"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        maxLength={500}
+                    ></textarea>
+                    <div className="text-right text-xs text-text-secondary dark:text-gray-400">
+                        {description.length}/500 karakter
+                    </div>
                 </div>
 
                 {/* Regions */}

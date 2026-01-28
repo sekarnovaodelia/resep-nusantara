@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSocial } from '../context/SocialContext';
+import { useBookmarks } from '../context/BookmarkContext';
 import EditProfileModal from '../components/profile/EditProfileModal';
 
 const Profile = () => {
@@ -8,8 +10,15 @@ const Profile = () => {
     const [myRecipes, setMyRecipes] = React.useState([]);
     const [bookmarkedRecipes, setBookmarkedRecipes] = React.useState([]);
     const [activeTab, setActiveTab] = React.useState('my_recipes'); // 'my_recipes' | 'collection'
+    const [stats, setStats] = React.useState({ followers: 0, following: 0, recipes: 0 });
     const { user, profile, loading, signOut } = useAuth();
+    const { fetchProfileStats } = useSocial();
+    const { bookmarkedRecipeIds } = useBookmarks();
     const navigate = useNavigate();
+
+    // Prevent duplicate fetchProfileStats calls (Strict Mode guard)
+    const lastFetchedUserIdRef = React.useRef(null);
+    const isFetchingStatsRef = React.useRef(false);
 
     // Redirect to login if not authenticated
     React.useEffect(() => {
@@ -18,29 +27,47 @@ const Profile = () => {
         }
     }, [user, loading, navigate]);
 
-    // Fetch user's recipes & bookmarks
+    // Fetch user's recipes & stats (consolidated)
     React.useEffect(() => {
-        const loadRecipes = async () => {
+        const loadData = async () => {
             if (user?.id) {
-                try {
-                    const { fetchRecipes, fetchBookmarkedRecipes } = await import('../lib/recipeService');
+                // Guard: Don't refetch if already fetching or already fetched for this user
+                if (isFetchingStatsRef.current || lastFetchedUserIdRef.current === user.id) {
+                    return;
+                }
 
-                    // Always load my recipes for stats
+                isFetchingStatsRef.current = true;
+                lastFetchedUserIdRef.current = user.id;
+
+                try {
+                    const { fetchRecipes } = await import('../lib/recipeService');
+
+                    // 1. Fetch Recipes
                     const myRecs = await fetchRecipes({ userId: user.id });
                     setMyRecipes(myRecs);
 
-                    // Load bookmarks if tab is collection
+                    // 2. Fetch consolidated stats (single request instead of 3 HEAD requests)
+                    const profileStats = await fetchProfileStats(user.id);
+                    setStats({
+                        ...profileStats,
+                        recipes: myRecs.length
+                    });
+
+                    // 3. Load bookmarks if tab is collection (use cached context instead of re-fetching)
                     if (activeTab === 'collection') {
-                        const bookmarked = await fetchBookmarkedRecipes(user.id);
+                        // Get recipes that are bookmarked from cached IDs
+                        const bookmarked = myRecs.filter(recipe => bookmarkedRecipeIds.has(recipe.id));
                         setBookmarkedRecipes(bookmarked);
                     }
                 } catch (error) {
-                    console.error('Error loading recipes:', error);
+                    console.error('Error loading profile data:', error);
+                } finally {
+                    isFetchingStatsRef.current = false;
                 }
             }
         };
-        loadRecipes();
-    }, [user, activeTab]);
+        loadData();
+    }, [user, activeTab, fetchProfileStats, bookmarkedRecipeIds]);
 
 
 
@@ -93,17 +120,17 @@ const Profile = () => {
                         </div>
                         <div className="flex flex-wrap gap-6 mt-6 pt-0 md:pt-6 md:border-t border-[#e7d9cf] dark:border-[#3a2e25] justify-around md:justify-start">
                             <div className="flex flex-col items-center md:items-start gap-0.5 px-2">
-                                <p className="text-text-main dark:text-white text-lg md:text-xl font-bold">0</p>
+                                <p className="text-text-main dark:text-white text-lg md:text-xl font-bold">{stats.followers}</p>
                                 <p className="text-text-sub dark:text-gray-500 text-xs md:text-sm">Pengikut</p>
                             </div>
                             <div className="w-px bg-[#e7d9cf] dark:bg-[#3a2e25] h-10 mx-2 hidden md:block"></div>
                             <div className="flex flex-col items-center md:items-start gap-0.5 px-2">
-                                <p className="text-text-main dark:text-white text-lg md:text-xl font-bold">0</p>
+                                <p className="text-text-main dark:text-white text-lg md:text-xl font-bold">{stats.following}</p>
                                 <p className="text-text-sub dark:text-gray-500 text-xs md:text-sm">Mengikuti</p>
                             </div>
                             <div className="w-px bg-[#e7d9cf] dark:bg-[#3a2e25] h-10 mx-2 hidden md:block"></div>
                             <div className="flex flex-col items-center md:items-start gap-0.5 px-2">
-                                <p className="text-text-main dark:text-white text-lg md:text-xl font-bold">{myRecipes.length}</p>
+                                <p className="text-text-main dark:text-white text-lg md:text-xl font-bold">{stats.recipes}</p>
                                 <p className="text-text-sub dark:text-gray-500 text-xs md:text-sm">Resep</p>
                             </div>
                         </div>

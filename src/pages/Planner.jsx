@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     DndContext,
@@ -12,68 +12,11 @@ import {
     useSensors,
 } from '@dnd-kit/core';
 import { createPortal } from 'react-dom';
-
-// --- Mock Data ---
-
-const MOCK_SAVED_RECIPES = [
-    {
-        id: 'recipe-1',
-        name: 'Nasi Goreng Kampung',
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB80UvNrkJi1WhsjYIVDkkb-UUUEzu85gAhv6KCRbEQnKoGqjNxia42Kl-DLsb5DGDmGrSlG5AFzqRovf65QHHhDI1npo7jAGaHgrMXt289GBtTYmQiq1Jv5Lk1FBFykjMmhMZANPnLq0TiedInzbs2PBuV0mLzO7V9OzZ6KS0nu5q43Cw1ktyRVKE1sycgTgxYHvr56-mnKb-2NHhjGX7zhZaNqdpq9RGZX2jhmYAnz4lePysmhR9UcmWCDgB1B7g2PI9LIUXjr69F',
-        time: '20m',
-        portion: 2,
-        ingredients: [
-            { name: 'Nasi Putih', qty: '2 piring' },
-            { name: 'Bawang Merah', qty: '3 siung' },
-            { name: 'Telur', qty: '2 butir' }
-        ],
-        tags: ['Indonesian', 'Quick']
-    },
-    {
-        id: 'recipe-2',
-        name: 'Sate Ayam Madura',
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDwqUGcL0-1Wo13jNSmHZ5TWOMJrrNbyVFeCLHNTa-3Wfz_Yl6WCdLK9X7usNaKDZ1rQRFgRVAzPaBI8QH2OVMhYcK7jn3uat0cmZynv0y_1vCQUzlF7DSrO1BHvZ3ohR9nkb8V26Gf2ZdV8HlOeXqVFQCMW35hlwAOF5MMhJSMeGQZEHeSlF9fHHaURVP8KFLsjUEVtLyZo4uQDSR9pNPCewvaJ-CnptOAnK0QFJslJn6O16F0GnXFdiPlwkf9DQfV3p1Lyehv0EcS',
-        time: '50m',
-        portion: 4,
-        ingredients: [
-            { name: 'Dada Ayam', qty: '500g' },
-            { name: 'Bumbu Kacang', qty: '1 pak' },
-            { name: 'Kecap Manis', qty: '100ml' }
-        ],
-        tags: ['Protein', 'BBQ']
-    },
-    {
-        id: 'recipe-3',
-        name: 'Gado-Gado Special',
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCc_uqe8IFIF7djCqXXBemBNUgkBgd_Wl4b_p3aD-r0lqldSqpOqZLkoZUFsoi0bI-E5G_hKjAceoDNZ7im5M0c2yVqZjKxcUL1lSygeM_z5wqjLyMP_7qGP4OVGSmqVjxaCNIq5CUv1n9HC8-RTKlbtH4q2fSnw8y99Y07RV9Wrzs1riN2bT1HO5sNoH7H1b6Z3tcB3r4kq9n2-xzAZlst34WAGhSwmkbk8QVYlp0HO-X5wlIo1t6Pg2qkKlBBBbylEJA5uWEG9-D0',
-        time: '30m',
-        portion: 2,
-        ingredients: [
-            { name: 'Tahu', qty: '2 potong' },
-            { name: 'Tempe', qty: '2 potong' },
-            { name: 'Bumbu Kacang', qty: '1 pak' },
-            { name: 'Sayuran Campur', qty: '300g' }
-        ],
-        tags: ['Veggie', 'Healthy']
-    },
-    {
-        id: 'recipe-4',
-        name: 'Bubur Ayam Jakarta',
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCso2LaEMafR9j8XQCbbNyEODVemTKLxY3CvGnHBfEJa08mwp7_vv0j7O-pHBpWJYd8iWWL9BmHcIJ3uHxhCq0Gd-AFfkinzcoyqQvvSMZirabQcOKki1FD4OX9bpUpLF6HASODsuupZGA86dkpjFTyL2kk-_AWwT2Bxd4VpvhmUNluMrFven5NWyY8KtGBMfDRNjZ-ISCwcuq5TCNDFZfJ8m725wMUitG1UkT05Eaq3R58OQNUzIo63p0byJHmnm04VOse5NpD351m',
-        time: '45m',
-        portion: 2,
-        ingredients: [
-            { name: 'Beras', qty: '200g' },
-            { name: 'Dada Ayam', qty: '200g' },
-            { name: 'Kerupuk', qty: '1 pak' }
-        ],
-        tags: ['Indonesian', 'Comfort']
-    }
-];
+import { useAuth } from '../context/AuthContext';
 
 // --- Modal Component ---
 
-const RecipeSelectionModal = ({ isOpen, onClose, onSelect }) => {
+const RecipeSelectionModal = ({ isOpen, onClose, onSelect, savedRecipes }) => {
     if (!isOpen) return null;
 
     return createPortal(
@@ -101,7 +44,7 @@ const RecipeSelectionModal = ({ isOpen, onClose, onSelect }) => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f8f7f6] dark:bg-[#1b130d]">
-                    {MOCK_SAVED_RECIPES.map((recipe) => (
+                    {savedRecipes.map((recipe) => (
                         <div
                             key={recipe.id}
                             onClick={() => onSelect(recipe)}
@@ -109,12 +52,12 @@ const RecipeSelectionModal = ({ isOpen, onClose, onSelect }) => {
                         >
                             <div
                                 className="size-16 rounded-lg bg-cover bg-center shrink-0"
-                                style={{ backgroundImage: `url("${recipe.image}")` }}
+                                style={{ backgroundImage: `url("${recipe.main_image_url || 'https://placehold.co/100x100'}")` }}
                             ></div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-[#1b130d] dark:text-white text-base group-hover:text-primary transition-colors">{recipe.name}</h4>
+                                <h4 className="font-bold text-[#1b130d] dark:text-white text-base group-hover:text-primary transition-colors">{recipe.title}</h4>
                                 <div className="flex items-center gap-3 mt-1 text-xs text-[#9a6c4c] dark:text-gray-300 font-medium">
-                                    <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[14px]">person</span> {recipe.portion} Porsi</span>
+                                    <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-[14px]">person</span> {recipe.portion || '-'} Porsi</span>
                                 </div>
                             </div>
                             <button className="size-8 rounded-full border border-border-light dark:border-border-dark flex items-center justify-center text-primary bg-orange-50 dark:bg-orange-900/20 group-hover:bg-primary group-hover:text-white transition-all">
@@ -122,6 +65,9 @@ const RecipeSelectionModal = ({ isOpen, onClose, onSelect }) => {
                             </button>
                         </div>
                     ))}
+                    {savedRecipes.length === 0 && (
+                        <p className="text-center text-gray-400 py-4">Belum ada resep tersimpan.</p>
+                    )}
                 </div>
             </div>
         </div>,
@@ -149,11 +95,11 @@ const DraggableRecipeCard = ({ recipe }) => {
             <div className="flex gap-3 items-center">
                 <div
                     className="size-12 rounded-lg bg-cover bg-center flex-shrink-0"
-                    style={{ backgroundImage: `url("${recipe.image}")` }}
+                    style={{ backgroundImage: `url("${recipe.main_image_url || 'https://placehold.co/100x100'}")` }}
                 ></div>
                 <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-[#1b130d] dark:text-white text-sm leading-tight">
-                        {recipe.name}
+                        {recipe.title}
                     </h4>
                 </div>
             </div>
@@ -166,6 +112,8 @@ const DroppableMealSlot = ({ title, icon, slotId, currentRecipe, onRemove, onAdd
     const { setNodeRef, isOver } = useDroppable({
         id: slotId,
     });
+
+    const navigate = useNavigate();
 
     return (
         <section className={`flex flex-col h-full ${compact ? 'min-h-[150px]' : ''}`}>
@@ -191,7 +139,10 @@ const DroppableMealSlot = ({ title, icon, slotId, currentRecipe, onRemove, onAdd
                     } ${compact ? 'border border-dashed border-primary/20 bg-white/50 dark:bg-surface-dark/50 p-2' : 'space-y-4'}`}
             >
                 {currentRecipe ? (
-                    <div className={`group bg-white dark:bg-surface-dark border border-primary/20 dark:border-border-dark rounded-2xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col relative ${compact ? 'h-full' : 'h-48'}`}>
+                    <div
+                        onClick={() => navigate(`/recipe/${currentRecipe.id}`)}
+                        className={`group bg-white dark:bg-surface-dark border border-primary/20 dark:border-border-dark rounded-2xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col relative cursor-pointer ${compact ? 'h-full' : 'h-48'}`}
+                    >
                         <div
                             className="absolute inset-0 bg-cover bg-center"
                             style={{ backgroundImage: `url("${currentRecipe.image}")` }}
@@ -200,7 +151,10 @@ const DroppableMealSlot = ({ title, icon, slotId, currentRecipe, onRemove, onAdd
                         </div>
 
                         <button
-                            onClick={onRemove}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onRemove();
+                            }}
                             className="absolute top-2 right-2 p-1.5 bg-white/90 dark:bg-black/50 rounded-full text-[#9a6c4c] dark:text-white hover:text-red-500 transition-colors z-10 opacity-0 group-hover:opacity-100"
                         >
                             <span className="material-symbols-outlined text-sm">close</span>
@@ -228,7 +182,7 @@ const DroppableMealSlot = ({ title, icon, slotId, currentRecipe, onRemove, onAdd
 
 // --- Weekly Calendar Component ---
 
-const WeeklyCalendar = ({ currentDate, mealPlan, setMealPlan, getSlotId, onAddClick }) => {
+const WeeklyCalendar = ({ currentDate, mealPlan, setMealPlan, getSlotId, onAddClick, onRemove }) => {
     // Generate dates for the week (starting Monday)
     const weekDates = useMemo(() => {
         const dates = [];
@@ -271,6 +225,7 @@ const WeeklyCalendar = ({ currentDate, mealPlan, setMealPlan, getSlotId, onAddCl
                         <div className="p-3 space-y-3 flex-1 flex flex-col">
                             {['breakfast', 'lunch', 'dinner'].map(type => {
                                 const slotId = `${dateStr}_${type}`;
+                                const item = mealPlan[slotId];
 
                                 return (
                                     <div key={type} className="flex-1 min-h-[100px]">
@@ -278,13 +233,9 @@ const WeeklyCalendar = ({ currentDate, mealPlan, setMealPlan, getSlotId, onAddCl
                                             title={null}
                                             icon={null}
                                             slotId={slotId}
-                                            currentRecipe={mealPlan[slotId]}
+                                            currentRecipe={item}
                                             compact={true}
-                                            onRemove={() => {
-                                                const newPlan = { ...mealPlan };
-                                                delete newPlan[slotId];
-                                                setMealPlan(newPlan);
-                                            }}
+                                            onRemove={() => onRemove(slotId, item)}
                                             onAddClick={() => onAddClick(slotId)}
                                         />
                                     </div>
@@ -302,9 +253,22 @@ const WeeklyCalendar = ({ currentDate, mealPlan, setMealPlan, getSlotId, onAddCl
 // --- Main Planner Component ---
 
 const Planner = () => {
+    const { user } = useAuth();
     // --- View State ---
     const [currentDate, setCurrentDate] = useState(new Date());
-    const currentISODate = currentDate.toISOString().split('T')[0];
+    const [plannerMode, setPlannerMode] = useState('daily'); // 'daily' | 'weekly'
+
+    // --- Data State ---
+    const [mealPlan, setMealPlan] = useState({});
+    const [savedRecipes, setSavedRecipes] = useState([]);
+
+    // --- Modal State ---
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [targetSlotId, setTargetSlotId] = useState(null);
+
+    // --- Optimization Refs ---
+    const lastFetchedRangeRef = React.useRef(null);
+    const abortControllerRef = React.useRef(null);
 
     // Format Date for display (e.g., "Senin, 23 Okt 2023")
     const formatDate = (date) => {
@@ -316,30 +280,144 @@ const Planner = () => {
         }).format(date);
     };
 
-    const [plannerMode, setPlannerMode] = useState('daily'); // 'daily' | 'weekly'
+    // Generate range key for deduplication
+    const getRangeKey = (start, end) => {
+        return `${start.toDateString()}_${end.toDateString()}`;
+    };
 
-    // --- Meal Data State ---
-    const [mealPlan, setMealPlan] = useState({
-        [`${new Date().toISOString().split('T')[0]}_breakfast`]: MOCK_SAVED_RECIPES[3],
-    });
+    // Load Data
+    useEffect(() => {
+        if (!user) return;
 
-    // --- Modal State ---
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [targetSlotId, setTargetSlotId] = useState(null);
+        const loadData = async () => {
+            try {
+                // Load Saved Recipes
+                const { fetchBookmarkedRecipes } = await import('../lib/recipeService');
+                const bookmarks = await fetchBookmarkedRecipes(user.id);
+                setSavedRecipes(bookmarks);
 
+                // Load Meal Plans with deduplication
+                const { fetchMealPlans } = await import('../lib/mealPlanService');
+
+                // Determine range based on mode (optimally fetch month or week)
+                // For simplicity, fetching a wide range around current date (e.g., +/- 1 month)
+                const start = new Date(currentDate);
+                start.setDate(start.getDate() - 30);
+                const end = new Date(currentDate);
+                end.setDate(end.getDate() + 30);
+
+                const rangeKey = getRangeKey(start, end);
+
+                // Skip fetch if same range was already fetched (deduplication)
+                // 🔴 CRITICAL: Check BEFORE doing anything else
+                if (lastFetchedRangeRef.current === rangeKey) {
+                    console.log('🟢 Meal plan range already fetched, skipping...');
+                    return;
+                }
+
+                // 🔴 CRITICAL: SET ref BEFORE fetch to guard against StrictMode double-mount
+                lastFetchedRangeRef.current = rangeKey;
+
+                // Cancel any in-flight requests
+                if (abortControllerRef.current) {
+                    abortControllerRef.current.abort();
+                }
+
+                const plans = await fetchMealPlans(user.id, start, end);
+                setMealPlan(plans);
+                console.log('✅ Meal plans fetched for range:', rangeKey);
+
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.log('🟡 Meal plan fetch cancelled');
+                } else {
+                    console.error('Error loading planner data:', error);
+                }
+            }
+        };
+        loadData();
+    }, [user, currentDate, plannerMode]); // Reload when view changes significantly or user changes
+
+    // Handlers
     const handleAddClick = (slotId) => {
         setTargetSlotId(slotId);
         setIsModalOpen(true);
     };
 
-    const handleModalSelect = (recipe) => {
-        if (targetSlotId) {
+    const addToPlan = async (slotId, recipe) => {
+        // Optimistic Update
+        setMealPlan(prev => ({
+            ...prev,
+            [slotId]: {
+                id: recipe.id,
+                name: recipe.title,
+                image: recipe.main_image_url || 'https://placehold.co/600x400',
+                isPending: true
+            }
+        }));
+
+        const [dateStr, type] = slotId.split('_');
+        const date = new Date(dateStr);
+
+        try {
+            const { addToMealPlan } = await import('../lib/mealPlanService');
+            const { data, error } = await addToMealPlan({
+                userId: user.id,
+                date,
+                slotType: type,
+                recipeId: recipe.id
+            });
+
+            if (error) throw error;
+
+            // Update with real DB data (especially ID for deletion)
             setMealPlan(prev => ({
                 ...prev,
-                [targetSlotId]: recipe
+                [slotId]: {
+                    ...prev[slotId],
+                    itemId: data.id,
+                    isPending: false
+                }
             }));
+
+        } catch (error) {
+            console.error('Failed to add to meal plan:', error);
+            // Revert on error
+            setMealPlan(prev => {
+                const next = { ...prev };
+                delete next[slotId];
+                return next;
+            });
+            alert('Gagal menambahkan ke jadwal.');
+        }
+    };
+
+    const handleModalSelect = (recipe) => {
+        if (targetSlotId) {
+            addToPlan(targetSlotId, recipe);
             setIsModalOpen(false);
             setTargetSlotId(null);
+        }
+    };
+
+    const handleRemove = async (slotId, item) => {
+        if (!item) return;
+
+        // Optimistic Remove
+        setMealPlan(prev => {
+            const next = { ...prev };
+            delete next[slotId];
+            return next;
+        });
+
+        if (item.itemId) {
+            try {
+                const { removeFromMealPlan } = await import('../lib/mealPlanService');
+                await removeFromMealPlan(item.itemId);
+            } catch (error) {
+                console.error('Failed to remove:', error);
+                // Could revert here if critical
+            }
         }
     };
 
@@ -364,19 +442,14 @@ const Planner = () => {
         if (over && active.data.current?.recipe) {
             const slotId = over.id;
             const recipe = active.data.current.recipe;
-
-            setMealPlan((prev) => ({
-                ...prev,
-                [slotId]: recipe,
-            }));
+            addToPlan(slotId, recipe);
         }
     };
 
-
-
-    // --- Render Helpers ---
-
-    const getSlotId = (type) => `${currentISODate}_${type}`;
+    const getSlotId = (type) => {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        return `${dateStr}_${type}`;
+    };
 
     return (
         <DndContext
@@ -457,11 +530,7 @@ const Planner = () => {
                                     icon="bakery_dining"
                                     slotId={getSlotId('breakfast')}
                                     currentRecipe={mealPlan[getSlotId('breakfast')]}
-                                    onRemove={() => {
-                                        const newPlan = { ...mealPlan };
-                                        delete newPlan[getSlotId('breakfast')];
-                                        setMealPlan(newPlan);
-                                    }}
+                                    onRemove={() => handleRemove(getSlotId('breakfast'), mealPlan[getSlotId('breakfast')])}
                                     onAddClick={() => handleAddClick(getSlotId('breakfast'))}
                                 />
                                 <DroppableMealSlot
@@ -469,11 +538,7 @@ const Planner = () => {
                                     icon="lunch_dining"
                                     slotId={getSlotId('lunch')}
                                     currentRecipe={mealPlan[getSlotId('lunch')]}
-                                    onRemove={() => {
-                                        const newPlan = { ...mealPlan };
-                                        delete newPlan[getSlotId('lunch')];
-                                        setMealPlan(newPlan);
-                                    }}
+                                    onRemove={() => handleRemove(getSlotId('lunch'), mealPlan[getSlotId('lunch')])}
                                     onAddClick={() => handleAddClick(getSlotId('lunch'))}
                                 />
                                 <DroppableMealSlot
@@ -481,11 +546,7 @@ const Planner = () => {
                                     icon="dinner_dining"
                                     slotId={getSlotId('dinner')}
                                     currentRecipe={mealPlan[getSlotId('dinner')]}
-                                    onRemove={() => {
-                                        const newPlan = { ...mealPlan };
-                                        delete newPlan[getSlotId('dinner')];
-                                        setMealPlan(newPlan);
-                                    }}
+                                    onRemove={() => handleRemove(getSlotId('dinner'), mealPlan[getSlotId('dinner')])}
                                     onAddClick={() => handleAddClick(getSlotId('dinner'))}
                                 />
                             </div>
@@ -496,6 +557,7 @@ const Planner = () => {
                                 setMealPlan={setMealPlan}
                                 getSlotId={getSlotId}
                                 onAddClick={handleAddClick}
+                                onRemove={handleRemove}
                             />
                         )}
                     </div>
@@ -531,9 +593,14 @@ const Planner = () => {
                             </div>
 
                             <div className="flex-1 p-3 space-y-2">
-                                {MOCK_SAVED_RECIPES.map((recipe) => (
+                                {savedRecipes.map((recipe) => (
                                     <DraggableRecipeCard key={recipe.id} recipe={recipe} />
                                 ))}
+                                {savedRecipes.length === 0 && (
+                                    <div className="text-center py-10 px-4">
+                                        <p className="text-sm text-gray-500">Belum ada resep yang disimpan. Tandai resep sebagai favorit untuk muncul di sini.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -548,11 +615,11 @@ const Planner = () => {
                             <div className="flex gap-3">
                                 <div
                                     className="size-14 rounded-lg bg-cover bg-center flex-shrink-0"
-                                    style={{ backgroundImage: `url("${activeDragItem.image}")` }}
+                                    style={{ backgroundImage: `url("${activeDragItem.main_image_url || 'https://placehold.co/100x100'}")` }}
                                 ></div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="font-bold text-[#1b130d] dark:text-white text-xs truncate">
-                                        {activeDragItem.name}
+                                        {activeDragItem.title}
                                     </h4>
                                 </div>
                             </div>
@@ -567,6 +634,7 @@ const Planner = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSelect={handleModalSelect}
+                savedRecipes={savedRecipes}
             />
 
         </DndContext>
