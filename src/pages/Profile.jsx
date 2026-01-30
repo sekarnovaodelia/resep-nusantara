@@ -16,6 +16,27 @@ const Profile = () => {
     const { bookmarkedRecipeIds } = useBookmarks();
     const navigate = useNavigate();
 
+    // Helper: Map status to badge styling
+    const getStatusBadge = (status) => {
+        const statusMap = {
+            'draft': { label: 'Draft', color: 'bg-gray-400 text-white' },
+            'pending': { label: 'Menunggu', color: 'bg-yellow-400 text-gray-900' },
+            'published': { label: 'Dipublikasikan', color: 'bg-green-500 text-white' },
+            'rejected': { label: 'Ditolak', color: 'bg-red-500 text-white' }
+        };
+        return statusMap[status] || { label: status, color: 'bg-gray-400 text-white' };
+    };
+
+    // Helper: Sort recipes by status (draft & pending first, then published, then rejected)
+    const sortRecipesByStatus = (recipes) => {
+        const statusOrder = { 'draft': 0, 'pending': 1, 'published': 2, 'rejected': 3 };
+        return [...recipes].sort((a, b) => {
+            const orderA = statusOrder[a.status] ?? 4;
+            const orderB = statusOrder[b.status] ?? 4;
+            return orderA - orderB;
+        });
+    };
+
     // Prevent duplicate fetchProfileStats calls (Strict Mode guard)
     const lastFetchedUserIdRef = React.useRef(null);
     const isFetchingStatsRef = React.useRef(false);
@@ -40,10 +61,10 @@ const Profile = () => {
                 lastFetchedUserIdRef.current = user.id;
 
                 try {
-                    const { fetchRecipes } = await import('../lib/recipeService');
+                    const { fetchUserRecipes } = await import('../lib/recipeService');
 
-                    // 1. Fetch Recipes
-                    const myRecs = await fetchRecipes({ userId: user.id });
+                    // 1. Fetch ALL User Recipes (all statuses: draft, pending, published, rejected)
+                    const myRecs = await fetchUserRecipes(user.id);
                     setMyRecipes(myRecs);
 
                     // 2. Fetch consolidated stats (single request instead of 3 HEAD requests)
@@ -165,27 +186,56 @@ const Profile = () => {
                     </div>
 
                     {/* Content */}
-                    {(activeTab === 'my_recipes' ? myRecipes : bookmarkedRecipes).length > 0 ? (
+                    {(activeTab === 'my_recipes' ? sortRecipesByStatus(myRecipes) : bookmarkedRecipes).length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 px-0.5">
-                            {(activeTab === 'my_recipes' ? myRecipes : bookmarkedRecipes).map((recipe) => (
-                                <Link to={`/recipe/${recipe.id}`} key={recipe.id} className="group flex flex-col gap-2 cursor-pointer">
-                                    <div className="w-full overflow-hidden rounded-xl aspect-square relative shadow-sm border border-gray-100 dark:border-gray-800">
-                                        <div className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url("${recipe.main_image_url || 'https://placehold.co/400x400'}")` }}></div>
-                                        {recipe.regions?.name && (
-                                            <div className="absolute top-2 left-2">
-                                                <span className="bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-text-main dark:text-white shadow-sm">{recipe.regions.name}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="px-1">
-                                        <h3 className="text-text-main dark:text-white text-sm md:text-base font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">{recipe.title}</h3>
-                                        <div className="flex items-center gap-1 mt-1">
-                                            <span className="material-symbols-outlined text-[14px] text-yellow-500">star</span>
-                                            <span className="text-xs font-medium text-text-sub dark:text-gray-400">4.8</span>
+                            {(activeTab === 'my_recipes' ? sortRecipesByStatus(myRecipes) : bookmarkedRecipes).map((recipe) => {
+                                const statusBadge = getStatusBadge(recipe.status);
+                                const canEdit = activeTab === 'my_recipes' && recipe.status !== 'published';
+                                return (
+                                <div key={recipe.id} className="group flex flex-col gap-2 relative">
+                                    <Link to={`/recipe/${recipe.id}`} className="flex flex-col gap-2 cursor-pointer">
+                                        <div className="w-full overflow-hidden rounded-xl aspect-square relative shadow-sm border border-gray-100 dark:border-gray-800">
+                                            <div className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url("${recipe.main_image_url || 'https://placehold.co/400x400'}")` }}></div>
+                                            {recipe.regions?.name && (
+                                                <div className="absolute top-2 left-2">
+                                                    <span className="bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-text-main dark:text-white shadow-sm">{recipe.regions.name}</span>
+                                                </div>
+                                            )}
+                                            {activeTab === 'my_recipes' && recipe.status && (
+                                                <div className="absolute top-2 right-2">
+                                                    <span className={`${statusBadge.color} px-2 py-1 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wider shadow-sm`}>{statusBadge.label}</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                </Link>
-                            ))}
+                                        <div className="px-1">
+                                            <h3 className="text-text-main dark:text-white text-sm md:text-base font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">{recipe.title}</h3>
+                                            <div className="flex items-center gap-1 mt-1">
+                                                <span className="material-symbols-outlined text-[14px] text-yellow-500">star</span>
+                                                <span className="text-xs font-medium text-text-sub dark:text-gray-400">4.8</span>
+                                            </div>
+                                        </div>
+                                    </Link>
+
+                                    {/* Action Overlay - Lihat / Edit for my_recipes */}
+                                    {activeTab === 'my_recipes' && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex flex-col gap-3">
+                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/recipe/${recipe.id}`); }} className="px-4 py-2 bg-white text-text-main font-bold rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2">
+                                                    <span className="material-symbols-outlined">visibility</span>
+                                                    Lihat
+                                                </button>
+                                                {canEdit && (
+                                                    <Link to={`/recipe/${recipe.id}/edit`} onClick={(e) => e.stopPropagation()} className="px-4 py-2 bg-white text-primary font-bold rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2">
+                                                        <span className="material-symbols-outlined">edit</span>
+                                                        Edit
+                                                    </Link>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                            })}
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-16 text-center">

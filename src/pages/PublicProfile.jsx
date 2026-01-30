@@ -54,15 +54,19 @@ const PublicProfile = () => {
                 setStats(profileStats);
 
                 // 3. Fetch Recipes
-                const { data: recipesData } = await supabase
+                const { data: recipesData, error: recipesError } = await supabase
                     .from('recipes')
                     .select(`
                         *,
                         regions(name)
                     `)
                     .eq('user_id', profileId)
-                    .eq('is_published', true)
+                    .eq('status', 'published')
                     .order('created_at', { ascending: false });
+
+                if (recipesError) {
+                    console.error('Error fetching public recipes:', recipesError);
+                }
 
                 setRecipes(recipesData || []);
 

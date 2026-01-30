@@ -155,7 +155,7 @@ const UploadRecipe = () => {
         setIsPublishing(true);
 
         try {
-            const recipe = await publishRecipe(fullRecipeData, user.id, isPublished);
+            const recipe = await publishRecipe(fullRecipeData, user.id, !isPublished);
             alert(`Resep berhasil ${isPublished ? 'dipublish' : 'disimpan sebagai draft'}!`);
             resetForm();
             navigate(`/recipe/${recipe.id}`, { replace: true });

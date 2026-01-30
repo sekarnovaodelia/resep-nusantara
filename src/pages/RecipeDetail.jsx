@@ -120,8 +120,7 @@ const RecipeDetail = () => {
         const fetchRecipe = async () => {
             setLoading(true);
 
-            // Fetch recipe with all relations in ONE query (waterfall fix)
-            const { data: recipeData, error: recipeError } = await supabase
+            const { data, error } = await supabase
                 .from('recipes')
                 .select(`
                     *,
@@ -131,33 +130,31 @@ const RecipeDetail = () => {
                     recipe_steps(*)
                 `)
                 .eq('id', id)
-                .single();
+                .maybeSingle(); // Returns null if blocked by RLS
 
-            if (recipeError || !recipeData) {
-                console.error('Recipe not found:', recipeError);
+            if (error) {
+                console.error('Recipe fetch error:', error);
                 setLoading(false);
                 return;
             }
 
-            // Set main recipe data
-            setRecipe(recipeData);
-
-            // Set Author (joined data)
-            const authorData = recipeData.user_profiles;
-            setAuthor(authorData);
-            if (authorData) {
-                checkFollow(authorData.id);
+            if (!data) {
+                console.warn('Recipe not found or not accessible');
+                setLoading(false);
+                return;
             }
 
-            // Set Ingredients (joined data) - Sort locally
-            const sortedIngredients = (recipeData.recipe_ingredients || [])
-                .sort((a, b) => a.order_index - b.order_index);
-            setIngredients(sortedIngredients);
+            // If we reach here, RLS has authorized access
+            setRecipe(data);
+            setAuthor(data.user_profiles);
 
-            // Set Steps (joined data) - Sort locally
-            const sortedSteps = (recipeData.recipe_steps || [])
-                .sort((a, b) => a.step_number - b.step_number);
-            setSteps(sortedSteps);
+            setIngredients(
+                (data.recipe_ingredients || []).sort((a, b) => a.order_index - b.order_index)
+            );
+
+            setSteps(
+                (data.recipe_steps || []).sort((a, b) => a.step_number - b.step_number)
+            );
 
             setLoading(false);
         };
@@ -165,7 +162,7 @@ const RecipeDetail = () => {
         if (id) {
             fetchRecipe();
         }
-    }, [id]);
+    }, [id, user?.id]);
 
     if (loading) {
         return (
@@ -287,7 +284,7 @@ const RecipeDetail = () => {
                     <div className="bg-white dark:bg-surface-dark p-6 rounded-2xl shadow-sm border border-border-light dark:border-border-dark h-full flex flex-col justify-between">
                         <div>
                             <div className="flex items-center gap-2 mb-3">
-                                {recipe.is_published && (
+                                {recipe.status === 'published' && (
                                     <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Published</span>
                                 )}
                             </div>

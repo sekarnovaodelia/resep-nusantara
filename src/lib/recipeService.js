@@ -92,10 +92,10 @@ export function fetchRegions() {
  * Publish/save recipe to Supabase
  * @param {Object} recipeData - All recipe data
  * @param {string} userId - User ID
- * @param {boolean} isPublished - Whether to publish or save as draft
+ * @param {boolean} isDraft - If true, save as 'draft', otherwise 'pending'
  * @returns {Promise<Object>} - Created recipe
  */
-export async function publishRecipe(recipeData, userId, isPublished = true) {
+export async function publishRecipe(recipeData, userId, isDraft = true) {
     const {
         title,
         description,
@@ -106,7 +106,10 @@ export async function publishRecipe(recipeData, userId, isPublished = true) {
         tags = []
     } = recipeData;
 
-    console.log('🔵 Starting publishRecipe...', { title, userId, isPublished });
+    // Set status based on isDraft flag
+    const status = isDraft ? 'draft' : 'pending';
+
+    console.log('🔵 Starting publishRecipe...', { title, userId, status });
 
     try {
         // 1. Upload main image
@@ -126,7 +129,7 @@ export async function publishRecipe(recipeData, userId, isPublished = true) {
                 description,
                 main_image_url: mainImageUrl,
                 region_id: regionId || null,
-                is_published: isPublished,
+                status: status,
             })
             .select()
             .single();
@@ -297,7 +300,7 @@ export async function fetchRecipes({ searchQuery = '', regionId = null, userId =
                         avatar_url
                     )
                 `)
-                .eq('is_published', true)
+                .eq('status', 'published')
                 .order('created_at', { ascending: false })
                 .limit(limit);
 
@@ -376,6 +379,37 @@ export async function toggleBookmark(userId, recipeId) {
  * @param {string} userId
  * @returns {Promise<Array>}
  */
+export async function fetchUserRecipes(userId) {
+    if (!userId) return [];
+
+    console.log('🔵 Fetching user recipes for userId:', userId);
+
+    const { data, error } = await supabase
+        .from('recipes')
+        .select(`
+            *,
+            regions (
+                id,
+                name
+            )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('🔴 Error fetching user recipes:', error);
+        return [];
+    }
+
+    console.log(`✅ Fetched ${data?.length || 0} user recipes`);
+    return data || [];
+}
+
+/**
+ * Fetch recipes bookmarked by user
+ * @param {string} userId
+ * @returns {Promise<Array>}
+ */
 export async function fetchBookmarkedRecipes(userId) {
     if (!userId) return [];
 
@@ -397,8 +431,10 @@ export async function fetchBookmarkedRecipes(userId) {
         return [];
     }
 
-    // Map to return just the recipe objects (flattened)
-    return data.map(item => item.recipes).filter(r => r !== null);
+    // Map to return just the recipe objects (flattened) and filter published only
+    return data
+        .map(item => item.recipes)
+        .filter(r => r !== null && r.status === 'published');
 }
 
 /**
@@ -455,4 +491,193 @@ export async function getRecipeForEdit(recipeId) {
         steps: recipe.recipe_steps.sort((a, b) => a.step_number - b.step_number),
         tags: recipe.recipe_tags.map(t => t.tag_name)
     };
+}
+
+/**
+ * Update recipe
+ * @param {string} recipeId - Recipe ID to update
+ * @param {string} userId - User ID (for ownership check)
+ * @param {Object} updateData - Data to update
+ * @param {string} newStatus - New status ('draft', 'pending', etc.)
+ * @returns {Promise<Object>} - Updated recipe
+ */
+export async function updateRecipe(recipeId, userId, updateData, newStatus = 'draft') {
+    const {
+        title,
+        description,
+        regionId,
+        ingredients,
+        steps,
+        tags = [],
+        mainImageFile,
+        status
+    } = updateData;
+
+    console.log('🔵 Starting updateRecipe...', { recipeId, userId, status: newStatus });
+
+    try {
+        // 1. Check ownership & current status from DB
+        const { data: currentRecipe, error: checkError } = await supabase
+            .from('recipes')
+            .select('user_id, status, main_image_url')
+            .eq('id', recipeId)
+            .single();
+
+        if (checkError) {
+            console.error('🔴 Error checking recipe ownership:', checkError);
+            throw checkError;
+        }
+
+        if (currentRecipe.user_id !== userId) {
+            console.error('🔴 Unauthorized: User does not own this recipe');
+            throw new Error('Anda tidak memiliki izin untuk mengedit resep ini');
+        }
+
+        if (currentRecipe.status === 'published') {
+            console.error('🔴 Cannot edit published recipe');
+            throw new Error('Resep yang sudah dipublikasikan tidak bisa diedit');
+        }
+
+        // 2. Upload new main image if provided
+        let mainImageUrl = currentRecipe.main_image_url;
+        if (mainImageFile) {
+            console.log('🔵 Uploading new main image...');
+            mainImageUrl = await uploadRecipeImage(mainImageFile, 'main');
+        }
+
+        // 3. Update recipe header
+        console.log('🔵 Updating recipe...');
+        const { data: updatedRecipe, error: updateError } = await supabase
+            .from('recipes')
+            .update({
+                title: title.trim(),
+                description: description.trim(),
+                main_image_url: mainImageUrl,
+                region_id: regionId || null,
+                status: newStatus || currentRecipe.status  // Keep status if not changing
+            })
+            .eq('id', recipeId)
+            .select()
+            .single();
+
+        if (updateError) {
+            console.error('🔴 Recipe update error:', updateError);
+            throw updateError;
+        }
+
+        console.log('✅ Recipe updated:', recipeId);
+
+        // 4. Update ingredients
+        if (ingredients && ingredients.length > 0) {
+            console.log('🔵 Updating ingredients...');
+
+            // Delete old ingredients
+            await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
+
+            // Insert new ingredients (upload images when imageFile provided)
+            const ingredientsToInsert = [];
+            for (let i = 0; i < ingredients.length; i++) {
+                const ing = ingredients[i];
+                if (!ing.name || !ing.name.trim()) continue;
+
+                let imageUrl = ing.image_url || null;
+                if (ing.imageFile) {
+                    console.log(`🔵 Uploading ingredient ${i + 1} image...`);
+                    imageUrl = await uploadRecipeImage(ing.imageFile, 'ingredients');
+                }
+
+                ingredientsToInsert.push({
+                    recipe_id: recipeId,
+                    name: ing.name.trim(),
+                    quantity: ing.quantity || null,
+                    image_url: imageUrl,
+                    order_index: i
+                });
+            }
+
+            if (ingredientsToInsert.length > 0) {
+                const { error: ingError } = await supabase
+                    .from('recipe_ingredients')
+                    .insert(ingredientsToInsert);
+
+                if (ingError) {
+                    console.error('🔴 Ingredients update error:', ingError);
+                    throw ingError;
+                }
+            }
+        }
+
+        // 5. Update steps
+        if (steps && steps.length > 0) {
+            console.log('🔵 Updating steps...');
+
+            // Delete old steps
+            await supabase.from('recipe_steps').delete().eq('recipe_id', recipeId);
+
+            // Insert new steps (upload images when imageFile provided)
+            const stepsToInsert = [];
+            for (let i = 0; i < steps.length; i++) {
+                const step = steps[i];
+                if (!step.description || !step.description.trim()) continue;
+
+                let imageUrl = step.image_url || null;
+                if (step.imageFile) {
+                    console.log(`🔵 Uploading step ${i + 1} image...`);
+                    imageUrl = await uploadRecipeImage(step.imageFile, 'steps');
+                }
+
+                stepsToInsert.push({
+                    recipe_id: recipeId,
+                    step_number: i + 1,
+                    description: step.description.trim(),
+                    image_url: imageUrl
+                });
+            }
+
+            if (stepsToInsert.length > 0) {
+                const { error: stepsError } = await supabase
+                    .from('recipe_steps')
+                    .insert(stepsToInsert);
+
+                if (stepsError) {
+                    console.error('🔴 Steps update error:', stepsError);
+                    throw stepsError;
+                }
+            }
+        }
+
+        // 6. Update tags
+        if (tags && tags.length > 0) {
+            console.log('🔵 Updating tags...');
+            
+            // Delete old tags
+            await supabase.from('recipe_tags').delete().eq('recipe_id', recipeId);
+
+            // Insert new tags
+            const tagsToInsert = tags
+                .map(tag => ({
+                    recipe_id: recipeId,
+                    tag_name: tag.trim()
+                }))
+                .filter(t => t.tag_name);
+
+            if (tagsToInsert.length > 0) {
+                const { error: tagsError } = await supabase
+                    .from('recipe_tags')
+                    .insert(tagsToInsert);
+
+                if (tagsError) {
+                    console.error('🔴 Tags update error:', tagsError);
+                    throw tagsError;
+                }
+            }
+        }
+
+        console.log('✅ Recipe updated successfully!');
+        return updatedRecipe;
+
+    } catch (error) {
+        console.error('🔴 updateRecipe error:', error);
+        throw error;
+    }
 }

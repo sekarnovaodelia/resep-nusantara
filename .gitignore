@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 .env
+exact_line_changes.md
+final_report.md
+fixes_final.md
+before_after_fixes.md
+guard_patterns_reference.md
+optimization_completed.md
+optimization_code_examples.md
+testing_guide.md
+verification_checklist.md

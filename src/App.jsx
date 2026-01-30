@@ -18,6 +18,7 @@ import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
 import Community from './pages/Community';
 import UploadRecipe from './pages/UploadRecipe';
+import EditRecipe from './pages/EditRecipe';
 import PostDetail from './pages/PostDetail';
 import NotificationPage from './pages/NotificationPage';
 
@@ -78,6 +79,7 @@ const AppContent = ({ darkMode, setDarkMode }) => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/public-profile" element={<PublicProfile />} />
           <Route path="/upload-recipe" element={<UploadRecipe />} />
+          <Route path="/recipe/:id/edit" element={<EditRecipe />} />
           <Route path="/notifications" element={<NotificationPage />} />
         </Routes>
       </main>

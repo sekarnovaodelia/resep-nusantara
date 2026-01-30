@@ -55,11 +55,11 @@ const StepSteps = ({ onBack, onPublish, isPublishing }) => {
                 </div>
 
                 {/* Nav Buttons */}
-                <div className="flex justify-between pt-6 border-t border-border-light dark:border-border-dark">
-                    <button onClick={onBack} className="px-6 py-3 rounded-xl border border-border-light dark:border-border-dark font-bold hover:bg-gray-50">Kembali</button>
-                    <div className="flex gap-3">
-                        <button onClick={() => onPublish(false)} disabled={isPublishing} className="px-6 py-3 rounded-xl border border-border-light dark:border-border-dark font-bold hover:bg-gray-50">Simpan Draft</button>
-                        <button onClick={() => onPublish(true)} disabled={isPublishing} className="px-8 py-3 rounded-xl bg-primary text-white font-bold hover:bg-orange-600 shadow-lg shadow-primary/30 flex gap-2 items-center">
+                <div className="flex flex-col md:flex-row md:justify-between gap-3 md:gap-0 pt-6 border-t border-border-light dark:border-border-dark">
+                    <button onClick={onBack} className="w-full md:w-auto px-6 py-3 rounded-xl border border-border-light dark:border-border-dark font-bold hover:bg-gray-50">Kembali</button>
+                    <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                        <button onClick={() => onPublish(false)} disabled={isPublishing} className="w-full md:w-auto px-6 py-3 rounded-xl border border-border-light dark:border-border-dark font-bold hover:bg-gray-50">Simpan Draft</button>
+                        <button onClick={() => onPublish(true)} disabled={isPublishing} className="w-full md:w-auto px-8 py-3 rounded-xl bg-primary text-white font-bold hover:bg-orange-600 shadow-lg shadow-primary/30 flex gap-2 items-center justify-center">
                             {isPublishing ? 'Memproses...' : 'Publish'} {!isPublishing && <span className="material-symbols-outlined">rocket_launch</span>}
                         </button>
                     </div>

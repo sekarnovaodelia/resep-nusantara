@@ -23,7 +23,7 @@ export async function fetchProfileStats(userId) {
                 .from('recipes')
                 .select('*', { count: 'exact', head: true })
                 .eq('user_id', userId)
-                .eq('is_published', true)
+                .eq('status', 'published')
         ]);
 
         console.log('✅ Profile stats fetched for user:', userId);

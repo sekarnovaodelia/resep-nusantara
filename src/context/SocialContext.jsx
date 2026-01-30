@@ -66,7 +66,7 @@ export const SocialProvider = ({ children }) => {
                     .from('recipes')
                     .select('*', { count: 'exact', head: true })
                     .eq('user_id', profileId)
-                    .eq('is_published', true)
+                    .eq('status', 'published')
             ]);
 
             const stats = {
