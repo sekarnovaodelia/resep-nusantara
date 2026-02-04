@@ -50,7 +50,7 @@ const Login = () => {
             <div className="hidden lg:flex lg:w-1/2 relative bg-surface-dark items-center justify-center overflow-hidden">
                 <div
                     className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 ease-in-out hover:scale-105"
-                    style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCvIPZXPn6BmiPx15ewiJcEePyQSIPmfQb9ZXMZm7LRJvcIz3-uGC7aev58qkgqbL4wCUDRESMGnKq55XELwU9x4w9cVFNDfWHuAluDLaDZQXHskfepKRIwGqRpJefZ3HSIjl40EjSN0AkUB8qTdMrzeiHTp2HbLCB3sWsJjecxhQuSlLAB67A_cYomVSZIQqFDQhvOpM47GKbLxP2O22EVganSbokU62qY40Cos0Wmhi1mvCmt7fSQkTzuXf0h7PoFIhnNoWdYA1R-Q')" }}
+                    style={{ backgroundImage: "url('')" }}
                 >
                 </div>
                 {/* Overlay for atmosphere */}

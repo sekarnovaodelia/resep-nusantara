@@ -189,7 +189,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                 </button>
 
                 {/* Notifications */}
-                <Link to="/notifications" className="p-2 rounded-full hover:bg-background-light dark:hover:bg-border-dark text-text-main dark:text-[#f3ece7] transition-all flex items-center justify-center relative group" title="Lihat Notifikasi">
+                <Link to="/notifications" className="hidden lg:flex p-2 rounded-full hover:bg-background-light dark:hover:bg-border-dark text-text-main dark:text-[#f3ece7] transition-all items-center justify-center relative group" title="Lihat Notifikasi">
                     <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
                         {unreadCount > 0 ? 'notifications_active' : 'notifications'}
                     </span>
@@ -230,10 +230,18 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                                         <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">person_outline</span>
                                         <span>Lihat Profil</span>
                                     </Link>
-                                    <Link to="/upload-recipe" className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group" onClick={() => setIsProfileOpen(false)}>
+                                    <Link to="/upload-recipe" className="hidden lg:flex w-full items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group" onClick={() => setIsProfileOpen(false)}>
                                         <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">add_circle</span>
                                         <span>Upload Resep</span>
                                     </Link>
+
+                                    {/* Admin Link */}
+                                    {profile?.role === 'admin' && (
+                                        <Link to="/admin" className="w-full flex items-center gap-4 px-4 py-3 text-sm font-bold text-text-main dark:text-gray-200 hover:bg-background-light dark:hover:bg-accent-dark rounded-xl transition-all group" onClick={() => setIsProfileOpen(false)}>
+                                            <span className="material-symbols-outlined w-6 text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-center">admin_panel_settings</span>
+                                            <span>Admin Dashboard</span>
+                                        </Link>
+                                    )}
                                 </div>
 
                                 {/* Logout */}

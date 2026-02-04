@@ -21,9 +21,21 @@ import UploadRecipe from './pages/UploadRecipe';
 import EditRecipe from './pages/EditRecipe';
 import PostDetail from './pages/PostDetail';
 import NotificationPage from './pages/NotificationPage';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminRoute from './components/admin/AdminRoute';
 
 const App = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    // Check local storage or system preference
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('darkMode');
+      if (savedMode !== null) {
+        return savedMode === 'true';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
 
   return (
     <AuthProvider>
@@ -55,9 +67,11 @@ const AppContent = ({ darkMode, setDarkMode }) => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
       document.documentElement.classList.remove('light');
+      localStorage.setItem('darkMode', 'true');
     } else {
       document.documentElement.classList.add('light');
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
     }
   }, [darkMode]);
 
@@ -81,6 +95,14 @@ const AppContent = ({ darkMode, setDarkMode }) => {
           <Route path="/upload-recipe" element={<UploadRecipe />} />
           <Route path="/recipe/:id/edit" element={<EditRecipe />} />
           <Route path="/notifications" element={<NotificationPage />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
         </Routes>
       </main>
 
