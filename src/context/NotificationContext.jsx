@@ -118,7 +118,8 @@ export const NotificationProvider = ({ children }) => {
             }
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [user, fetchUnreadCount]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     // Actions
     const markRead = async (id) => {
