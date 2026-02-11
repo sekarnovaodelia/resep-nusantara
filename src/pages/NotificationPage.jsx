@@ -1,27 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../lib/interactionService';
+import { useNotifications } from '../context/NotificationContext';
 
 const NotificationPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [notifications, setNotifications] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    const loadNotifications = async () => {
-        if (user) {
-            setLoading(true);
-            try {
-                const data = await fetchNotifications(user.id);
-                setNotifications(data);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        }
-    };
+    const { notifications: _notifs, loading, loadNotifications, markRead, markAllRead } = useNotifications();
+    const notifications = _notifs || [];
 
     useEffect(() => {
         if (!user) {
@@ -29,20 +15,15 @@ const NotificationPage = () => {
             return;
         }
         loadNotifications();
-    }, [user, navigate]);
+    }, [user, navigate, loadNotifications]);
 
     const handleMarkAllRead = async () => {
-        // Optimistic update
-        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-        await markAllNotificationsRead(user.id);
+        await markAllRead();
     };
 
     const handleNotificationClick = async (notification) => {
         if (!notification.is_read) {
-            // Optimistic update locally
-            setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
-            // Background update
-            markNotificationRead(notification.id);
+            await markRead(notification.id);
         }
 
         // Navigate based on type

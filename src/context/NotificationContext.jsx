@@ -7,19 +7,26 @@ const NotificationContext = createContext({});
 
 export const useNotifications = () => useContext(NotificationContext);
 
+// Polling interval: 2 minutes
+const POLL_INTERVAL = 120_000;
+// Minimum gap between polls to prevent duplicate requests
+const MIN_POLL_GAP = 10_000;
+
 export const NotificationProvider = ({ children }) => {
     const { user } = useAuth();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
 
-    // Refs for safe polling and avoiding double-fetch in StrictMode
+    // Refs for safe polling
     const intervalRef = useRef(null);
     const isFetchingRef = useRef(false);
+    const lastPollTimeRef = useRef(0);
+    const mountedRef = useRef(false);
 
-    // Fetch count (HEAD request)
+    // Fetch count (HEAD request) — no internal guard, caller is responsible
     const fetchUnreadCount = useCallback(async () => {
-        if (!user || isFetchingRef.current) return;
+        if (!user) return;
 
         try {
             const { count, error } = await supabase
@@ -43,9 +50,6 @@ export const NotificationProvider = ({ children }) => {
         try {
             const data = await fetchNotifications(user.id);
             setNotifications(data);
-            // Updating list often implies we might want to update count too
-            // accessing the length of unread in data might not be accurate if paginated, 
-            // but for simple cases it works. For now, we rely on the separate count fetch or manual sync.
             const unread = data.filter(n => !n.is_read).length;
             setUnreadCount(unread);
         } catch (error) {
@@ -55,10 +59,13 @@ export const NotificationProvider = ({ children }) => {
         }
     }, [user]);
 
-    // Smart Polling Logic
+    // Polling Logic — single source of truth for scheduling
     useEffect(() => {
-        // Clear any existing interval
-        if (intervalRef.current) clearInterval(intervalRef.current);
+        // Cleanup previous interval on re-run (StrictMode safety)
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
 
         if (!user) {
             setUnreadCount(0);
@@ -66,26 +73,36 @@ export const NotificationProvider = ({ children }) => {
             return;
         }
 
+        mountedRef.current = true;
+
         const poll = async () => {
-            if (document.hidden) return; // Don't poll if hidden
+            if (document.hidden) return;
             if (isFetchingRef.current) return;
+            if (!mountedRef.current) return;
+
+            // Enforce minimum gap between polls
+            const now = Date.now();
+            if (now - lastPollTimeRef.current < MIN_POLL_GAP) return;
 
             isFetchingRef.current = true;
-            await fetchUnreadCount();
-            isFetchingRef.current = false;
+            lastPollTimeRef.current = now;
+
+            try {
+                await fetchUnreadCount();
+            } finally {
+                isFetchingRef.current = false;
+            }
         };
 
-        // Initial fetch
-        poll();
+        // Initial fetch (slight delay to avoid StrictMode double-fire)
+        const initTimeout = setTimeout(poll, 500);
 
-        // Setup interval (60 seconds)
-        intervalRef.current = setInterval(poll, 60000);
+        // Setup interval
+        intervalRef.current = setInterval(poll, POLL_INTERVAL);
 
-        // Visibility listener
+        // Visibility listener — debounced via MIN_POLL_GAP
         const handleVisibilityChange = () => {
             if (!document.hidden) {
-                // If coming back to tab, poll immediately if it's been a while? 
-                // For simplicity, just poll immediately to refresh badge
                 poll();
             }
         };
@@ -93,21 +110,24 @@ export const NotificationProvider = ({ children }) => {
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
-            if (intervalRef.current) clearInterval(intervalRef.current);
+            mountedRef.current = false;
+            clearTimeout(initTimeout);
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [user, fetchUnreadCount]);
 
     // Actions
     const markRead = async (id) => {
-        // Optimistic
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
         setUnreadCount(prev => Math.max(0, prev - 1));
         await markNotificationRead(id);
     };
 
     const markAllRead = async () => {
-        // Optimistic
         setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
         setUnreadCount(0);
         if (user) await markAllNotificationsRead(user.id);
@@ -117,7 +137,7 @@ export const NotificationProvider = ({ children }) => {
         notifications,
         unreadCount,
         loading,
-        loadNotifications, // Manual refresh
+        loadNotifications,
         markRead,
         markAllRead
     };

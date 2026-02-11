@@ -227,13 +227,8 @@ export async function publishRecipe(recipeData, userId, isDraft = true) {
 
         console.log('✅ Recipe published successfully!');
 
-        // Fan-out notifications to followers (non-blocking)
-        try {
-            const { notifyFollowersOfUpload } = await import('./interactionService');
-            notifyFollowersOfUpload(userId, recipeId);
-        } catch (notifError) {
-            console.error('⚠️ Fan-out failed:', notifError);
-        }
+        // NOTE: Follower notifications are sent when admin approves the recipe,
+        // not at upload time (since new recipes go to 'pending' status first).
 
         return recipe;
 
@@ -263,16 +258,16 @@ const inflightRequests = new Map();
  * @param {number} [options.limit] - Limit results
  * @returns {Promise<Array>} - List of recipes
  */
-export async function fetchRecipes({ searchQuery = '', regionId = null, userId = null, limit = 10 } = {}) {
+export async function fetchRecipes({ searchQuery = '', regionId = null, userId = null, limit = 10, page = 0 } = {}) {
     // Generate cache key
-    const cacheKey = JSON.stringify({ searchQuery, regionId, userId, limit });
+    const cacheKey = JSON.stringify({ searchQuery, regionId, userId, limit, page });
 
     // Check cache
     if (cache.recipes.has(cacheKey)) {
         const { data, timestamp } = cache.recipes.get(cacheKey);
         if (Date.now() - timestamp < CACHE_TTL) {
             // console.log('🟢 Returning cached recipes');
-            return data;
+            return { data, count: cache.recipes.get(cacheKey).count || 0 };
         }
     }
 
@@ -282,7 +277,7 @@ export async function fetchRecipes({ searchQuery = '', regionId = null, userId =
         return inflightRequests.get(cacheKey);
     }
 
-    console.log('🔵 Fetching recipes with params:', { searchQuery, regionId, userId, limit });
+    console.log('🔵 Fetching recipes with params:', { searchQuery, regionId, userId, limit, page });
 
     const fetchPromise = (async () => {
         try {
@@ -299,10 +294,11 @@ export async function fetchRecipes({ searchQuery = '', regionId = null, userId =
                         username,
                         avatar_url
                     )
-                `)
+                `, { count: 'exact' })
                 .eq('status', 'published')
                 .order('created_at', { ascending: false })
-                .limit(limit);
+                .order('created_at', { ascending: false })
+                .range(page * limit, (page + 1) * limit - 1);
 
             // Apply filters
             if (searchQuery) {
@@ -317,18 +313,18 @@ export async function fetchRecipes({ searchQuery = '', regionId = null, userId =
                 query = query.eq('user_id', userId);
             }
 
-            const { data, error } = await query;
+            const { data, error, count } = await query;
 
             if (error) {
                 console.error('🔴 Error fetching recipes:', error);
-                return [];
+                return { data: [], count: 0 };
             }
 
             // Update cache
-            cache.recipes.set(cacheKey, { data: data || [], timestamp: Date.now() });
+            cache.recipes.set(cacheKey, { data: data || [], count: count || 0, timestamp: Date.now() });
 
-            console.log(`✅ Fetched ${data?.length || 0} recipes`);
-            return data || [];
+            console.log(`✅ Fetched ${data?.length || 0} recipes, Total: ${count}`);
+            return { data: data || [], count: count || 0 };
         } finally {
             inflightRequests.delete(cacheKey);
         }
@@ -649,7 +645,7 @@ export async function updateRecipe(recipeId, userId, updateData, newStatus = 'dr
         // 6. Update tags
         if (tags && tags.length > 0) {
             console.log('🔵 Updating tags...');
-            
+
             // Delete old tags
             await supabase.from('recipe_tags').delete().eq('recipe_id', recipeId);
 

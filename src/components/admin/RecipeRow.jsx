@@ -2,8 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { getOptimizedImageUrl } from '../../utils/imageOptimizer';
 
-const RecipeRow = ({ recipe, onApprove, onReject }) => {
+const RecipeRow = ({ recipe, onApprove, onReject, onPreview, onDelete }) => {
     const {
         id,
         title,
@@ -35,14 +36,12 @@ const RecipeRow = ({ recipe, onApprove, onReject }) => {
             {/* Title & Date */}
             <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex flex-col">
-                    <Link
-                        to={`/recipe/${id}`}
-                        className="text-sm font-medium text-text-main-light dark:text-text-main-dark hover:text-primary transition-colors hover:underline"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <button
+                        onClick={() => onPreview(id)}
+                        className="text-sm font-medium text-text-main-light dark:text-text-main-dark hover:text-primary transition-colors hover:underline text-left w-fit"
                     >
                         {title}
-                    </Link>
+                    </button>
                     <span className="text-xs text-text-sub-light dark:text-text-sub-dark">
                         {format(new Date(created_at), 'd MMMM yyyy, HH:mm', { locale: idLocale })}
                     </span>
@@ -54,7 +53,7 @@ const RecipeRow = ({ recipe, onApprove, onReject }) => {
                 <div className="flex items-center">
                     <div className="h-8 w-8 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
                         {profiles?.avatar_url ? (
-                            <img src={profiles.avatar_url} alt="" className="h-full w-full object-cover" />
+                            <img src={getOptimizedImageUrl(profiles.avatar_url, { width: 64, height: 64 })} alt="" className="h-full w-full object-cover" />
                         ) : (
                             <div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary text-xs font-bold">
                                 {profiles?.username?.charAt(0).toUpperCase()}
@@ -92,6 +91,23 @@ const RecipeRow = ({ recipe, onApprove, onReject }) => {
                             className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs font-bold transition-colors shadow-sm"
                         >
                             Reject
+                        </button>
+                    )}
+
+                    <button
+                        onClick={() => onPreview(id)}
+                        className="bg-gray-100 dark:bg-gray-800 text-text-main dark:text-gray-300 px-3 py-1 rounded-md text-xs font-bold transition-colors shadow-sm hover:bg-gray-200 dark:hover:bg-gray-700"
+                    >
+                        Preview
+                    </button>
+
+                    {status === 'rejected' && (
+                        <button
+                            onClick={() => onDelete(id)}
+                            className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-lg transition-colors flex items-center justify-center"
+                            title="Hapus Permanen"
+                        >
+                            <span className="material-symbols-outlined text-xl">delete</span>
                         </button>
                     )}
                 </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRecipe } from '../../context/RecipeContext';
 import { fetchRegions } from '../../lib/recipeService';
 
-const StepInfo = ({ onNext }) => {
+const StepInfo = ({ onNext, onSaveDraft, isPublishing }) => {
     const {
         title, setTitle,
         description, setDescription,
@@ -115,10 +115,10 @@ const StepInfo = ({ onNext }) => {
                     </div>
                 </div>
 
-                {/* Nav Buttons */}
-                <div className="flex justify-end pt-6 border-t border-border-light dark:border-border-dark">
-                    <button onClick={onNext} className="px-8 py-3 rounded-xl bg-primary text-white font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-primary/30 flex items-center gap-2">
-                        Lanjut ke Bahan <span className="material-symbols-outlined">arrow_forward</span>
+                <div className="flex justify-end pt-6 border-t border-border-light dark:border-border-dark gap-3">
+                    <button onClick={onSaveDraft} disabled={isPublishing} className="px-5 py-2 rounded-xl border border-border-light dark:border-border-dark font-bold text-sm hover:bg-gray-50 text-text-secondary">Simpan Draft</button>
+                    <button onClick={onNext} className="px-6 py-2 rounded-xl bg-primary text-white font-bold text-sm hover:bg-orange-600 transition-colors shadow-lg shadow-primary/30 flex items-center gap-2">
+                        Lanjut ke Bahan <span className="material-symbols-outlined text-lg">arrow_forward</span>
                     </button>
                 </div>
             </div>

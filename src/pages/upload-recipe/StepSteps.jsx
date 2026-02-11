@@ -55,12 +55,13 @@ const StepSteps = ({ onBack, onPublish, isPublishing }) => {
                 </div>
 
                 {/* Nav Buttons */}
+                {/* Nav Buttons */}
                 <div className="flex flex-col md:flex-row md:justify-between gap-3 md:gap-0 pt-6 border-t border-border-light dark:border-border-dark">
-                    <button onClick={onBack} className="w-full md:w-auto px-6 py-3 rounded-xl border border-border-light dark:border-border-dark font-bold hover:bg-gray-50">Kembali</button>
+                    <button onClick={onBack} className="w-full md:w-auto px-5 py-2 rounded-xl border border-border-light dark:border-border-dark font-bold text-sm hover:bg-gray-50">Kembali</button>
                     <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                        <button onClick={() => onPublish(false)} disabled={isPublishing} className="w-full md:w-auto px-6 py-3 rounded-xl border border-border-light dark:border-border-dark font-bold hover:bg-gray-50">Simpan Draft</button>
-                        <button onClick={() => onPublish(true)} disabled={isPublishing} className="w-full md:w-auto px-8 py-3 rounded-xl bg-primary text-white font-bold hover:bg-orange-600 shadow-lg shadow-primary/30 flex gap-2 items-center justify-center">
-                            {isPublishing ? 'Memproses...' : 'Publish'} {!isPublishing && <span className="material-symbols-outlined">rocket_launch</span>}
+                        <button onClick={() => onPublish(false)} disabled={isPublishing} className="w-full md:w-auto px-5 py-2 rounded-xl border border-border-light dark:border-border-dark font-bold text-sm hover:bg-gray-50 text-text-secondary">Simpan Draft</button>
+                        <button onClick={() => onPublish(true)} disabled={isPublishing} className="w-full md:w-auto px-6 py-2 rounded-xl bg-primary text-white font-bold text-sm hover:bg-orange-600 shadow-lg shadow-primary/30 flex gap-2 items-center justify-center">
+                            {isPublishing ? 'Memproses...' : 'Publish'} {!isPublishing && <span className="material-symbols-outlined text-lg">rocket_launch</span>}
                         </button>
                     </div>
                 </div>

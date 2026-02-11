@@ -174,7 +174,6 @@ const UploadRecipe = () => {
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 flex items-center gap-4">
                     <button
                         onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate(-1)}
-                        className="flex items-center justify-center text-text-secondary hover:text-text-main dark:text-gray-400 dark:hover:text-white transition-all size-10 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"
                     >
                         <span className="material-symbols-outlined text-2xl">arrow_back</span>
                     </button>
@@ -210,8 +209,8 @@ const UploadRecipe = () => {
 
                 {/* Form Content */}
                 <div className="w-full mx-auto">
-                    {currentStep === 1 && <StepInfo onNext={nextToStep2} />}
-                    {currentStep === 2 && <StepIngredients onNext={nextToStep3} onBack={() => setCurrentStep(1)} />}
+                    {currentStep === 1 && <StepInfo onNext={nextToStep2} onSaveDraft={() => handlePublish(false)} isPublishing={isPublishing} />}
+                    {currentStep === 2 && <StepIngredients onNext={nextToStep3} onBack={() => setCurrentStep(1)} onSaveDraft={() => handlePublish(false)} isPublishing={isPublishing} />}
                     {currentStep === 3 && <StepSteps onBack={() => setCurrentStep(2)} onPublish={handlePublish} isPublishing={isPublishing} isEditing={!!editId} />}
                 </div>
             </main>

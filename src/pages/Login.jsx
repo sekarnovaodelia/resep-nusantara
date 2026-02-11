@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { getOptimizedImageUrl, preloadImages } from '../utils/imageOptimizer';
 
 const Login = () => {
+    const splashImage = 'https://images.unsplash.com/photo-1680173073730-852e0ec93bec?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
+
+    // Preload important images for home page
+    const preloadHomeAssets = () => {
+        preloadImages([
+            'https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770187319968_jeb9z.jpg', // Hero image
+            'https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770273093607_zeezun.jfif' // Recommendation
+        ]);
+    };
     const [showPassword, setShowPassword] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -32,6 +42,7 @@ const Login = () => {
             if (error) throw error;
 
             console.log('🔵 Login successful, navigating to /');
+            preloadHomeAssets(); // Start preloading home assets immediately
             // Navigate to home page on successful login
             navigate('/');
         } catch (error) {
@@ -50,7 +61,7 @@ const Login = () => {
             <div className="hidden lg:flex lg:w-1/2 relative bg-surface-dark items-center justify-center overflow-hidden">
                 <div
                     className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 ease-in-out hover:scale-105"
-                    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1680173073730-852e0ec93bec?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')" }}
+                    style={{ backgroundImage: `url('${getOptimizedImageUrl(splashImage, { width: 800 })}')` }}
                 >
                 </div>
                 {/* Overlay for atmosphere */}

@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 import { useAdminRecipes } from '../hooks/useAdminRecipes';
 import RecipeRow from '../components/admin/RecipeRow';
+import AdminRecipePreviewModal from '../components/admin/AdminRecipePreviewModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('pending');
-    const { recipes, loading, error, updateStatus } = useAdminRecipes(activeTab);
+    const { recipes, loading, error, updateStatus, deleteRecipe } = useAdminRecipes(activeTab);
+    const [previewRecipeId, setPreviewRecipeId] = useState(null);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+    // Deletion State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [recipeToDelete, setRecipeToDelete] = useState(null);
 
     const tabs = [
         { id: 'pending', label: 'Pending Review' },
@@ -16,15 +24,33 @@ const AdminDashboard = () => {
     const handleApprove = (id) => updateStatus(id, 'published');
     const handleReject = (id) => updateStatus(id, 'rejected');
 
+    const handleOpenPreview = (id) => {
+        setPreviewRecipeId(id);
+        setIsPreviewOpen(true);
+    };
+
+    const handleOpenDelete = (id) => {
+        setRecipeToDelete(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (recipeToDelete) {
+            await deleteRecipe(recipeToDelete);
+            setIsDeleteModalOpen(false);
+            setRecipeToDelete(null);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-background-light dark:bg-background-dark">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-text-main-light dark:text-text-main-dark mb-2">
-                        Admin Dashboard
+                        Dashboard Admin
                     </h1>
                     <p className="text-text-sub-light dark:text-text-sub-dark">
-                        Manage and moderate community recipes.
+                        Kelola dan moderasi resep komunitas.
                     </p>
                 </div>
 
@@ -90,6 +116,8 @@ const AdminDashboard = () => {
                                             recipe={recipe}
                                             onApprove={handleApprove}
                                             onReject={handleReject}
+                                            onPreview={handleOpenPreview}
+                                            onDelete={handleOpenDelete}
                                         />
                                     ))}
                                 </tbody>
@@ -98,6 +126,25 @@ const AdminDashboard = () => {
                     )}
                 </div>
             </div>
+
+            <AdminRecipePreviewModal
+                isOpen={isPreviewOpen}
+                onClose={() => setIsPreviewOpen(false)}
+                recipeId={previewRecipeId}
+                onApprove={handleApprove}
+                onReject={handleReject}
+            />
+
+            <ConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleConfirmDelete}
+                title="Hapus Resep Permanen"
+                message="Apakah Anda yakin ingin menghapus resep ini secara permanen? Tindakan ini tidak dapat dibatalkan."
+                confirmText="Hapus"
+                cancelText="Batal"
+                isDanger={true}
+            />
         </div>
     );
 };

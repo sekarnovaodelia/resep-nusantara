@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { fetchRecipes, fetchRegions } from '../lib/recipeService';
 import { useAuth } from '../context/AuthContext';
 import { useBookmarks } from '../context/BookmarkContext';
+import { getOptimizedImageUrl } from '../utils/imageOptimizer';
 
 const Home = () => {
     const [searchParams, setSearchParams] = useSearchParams(); // Destructure setSearchParams to update URL properly without reload
@@ -13,6 +14,9 @@ const Home = () => {
     const [regions, setRegions] = useState([]);
     const [selectedRegionId, setSelectedRegionId] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(0);
+    const [totalRecipes, setTotalRecipes] = useState(0);
+    const LIMIT = 12;
     const { user } = useAuth();
     const { bookmarkedRecipeIds, toggleBookmark } = useBookmarks();
 
@@ -48,28 +52,40 @@ const Home = () => {
 
     // Fetch recipes when search or region changes
     useEffect(() => {
-        let mounted = true;
-        const loadRecipes = async () => {
-            setLoading(true);
-            try {
-                const data = await fetchRecipes({
-                    searchQuery,
-                    regionId: selectedRegionId,
-                    limit: 10
-                });
-                if (mounted) {
-                    setRecipes(data);
-                }
-            } catch (error) {
-                if (mounted) console.error('Error loading recipes:', error);
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        };
-
-        loadRecipes();
-        return () => { mounted = false; };
+        setPage(0);
+        loadRecipes(0);
     }, [searchQuery, selectedRegionId]);
+
+    const loadRecipes = async (pageNum) => {
+        setLoading(true);
+        // Scroll to top of grid
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        try {
+            const { data, count } = await fetchRecipes({
+                searchQuery,
+                regionId: selectedRegionId,
+                limit: LIMIT,
+                page: pageNum
+            });
+
+            setRecipes(data);
+            setTotalRecipes(count || 0);
+        } catch (error) {
+            console.error('Error loading recipes:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 0 && newPage < Math.ceil(totalRecipes / LIMIT)) {
+            setPage(newPage);
+            loadRecipes(newPage);
+        }
+    };
+
+    const totalPages = Math.ceil(totalRecipes / LIMIT);
 
     const handleRegionClick = (id) => {
         if (selectedRegionId === id) {
@@ -108,7 +124,7 @@ const Home = () => {
                         </div>
                         <div className="w-full lg:w-1/2 relative group">
                             <div className="absolute inset-0 bg-black/10 rounded-2xl rotate-3 transform transition-transform group-hover:rotate-6"></div>
-                            <div className="w-full h-full min-h-[300px] lg:min-h-[400px] bg-center bg-no-repeat bg-cover rounded-2xl shadow-xl relative z-10" style={{ backgroundImage: 'url("https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770187319968_jeb9z.jpg")' }}>
+                            <div className="w-full h-full min-h-[300px] lg:min-h-[400px] bg-center bg-no-repeat bg-cover rounded-2xl shadow-xl relative z-10" style={{ backgroundImage: `url('${getOptimizedImageUrl("https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770187319968_jeb9z.jpg", { width: 1000 })}')` }}>
                                 <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-black/80 backdrop-blur px-4 py-2 rounded-lg shadow-lg">
                                     <span className="text-xs font-bold uppercase tracking-wider text-text-secondary dark:text-gray-400">Paling Dicari</span>
                                 </div>
@@ -153,12 +169,15 @@ const Home = () => {
                             </h2>
                         </div>
 
-                        {/* Chef Recommendation - Moved here */}
                         <div className="flex gap-4 items-center bg-accent dark:bg-accent-dark/30 p-2 rounded-xl border border-primary/10 self-stretch md:self-auto">
                             <span className="text-xs font-bold uppercase tracking-wider text-primary px-2">Rekomendasi Kami</span>
                             <div className="w-px h-8 bg-primary/20"></div>
                             {[
-                                { title: "Tekwan Ikan Tenggiri", img: "https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770273093607_zeezun.jfif" },
+                                {
+                                    id: "a487fb48-5fac-47d6-9c7d-12d60b71ad7b",
+                                    title: "Tekwan Ikan Tenggiri",
+                                    img: "https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770273093607_zeezun.jfif"
+                                },
                             ].map((chefRec, idx) => (
                                 <div key={idx} onClick={() => navigate(`/recipe/${chefRec.id}`)} className="flex gap-3 items-center group cursor-pointer hover:opacity-80 transition-all">
                                     <div className="w-10 h-10 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: `url("${chefRec.img}")` }}></div>
@@ -176,47 +195,103 @@ const Home = () => {
                             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                         </div>
                     ) : recipes.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-                            {recipes.map((recipe) => (
-                                <div onClick={() => navigate(`/recipe/${recipe.id}`)} key={recipe.id} className="group flex flex-col gap-2 cursor-pointer relative">
-                                    <div className="w-full overflow-hidden rounded-xl aspect-square relative shadow-sm border border-gray-100 dark:border-gray-800">
-                                        <div className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url("${recipe.main_image_url || 'https://placehold.co/600x400'}")` }}></div>
-                                        {recipe.regions?.name && (
-                                            <div className="absolute top-2 left-2">
-                                                <span className="bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-text-main dark:text-white shadow-sm">{recipe.regions.name}</span>
-                                            </div>
-                                        )}
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleBookmarkToggle(recipe.id);
-                                            }}
-                                            className={`absolute top-2 right-2 p-1.5 rounded-full backdrop-blur transition-colors shadow-sm ${bookmarkedRecipeIds.has(recipe.id) ? 'bg-primary/20 text-primary hover:bg-primary/30' : 'bg-white/30 text-white hover:bg-white/50'}`}
-                                        >
-                                            <span className={`material-symbols-outlined text-[18px] ${bookmarkedRecipeIds.has(recipe.id) ? 'fill-current' : ''}`}>
-                                                {bookmarkedRecipeIds.has(recipe.id) ? 'bookmark' : 'bookmark_border'}
-                                            </span>
-                                        </button>
-                                    </div>
-                                    <div className="px-1">
-                                        <h3 className="text-text-main dark:text-white text-sm md:text-lg font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-1">{recipe.title}</h3>
-                                        <div className="flex items-center gap-1.5 relative z-10">
-                                            <Link
-                                                to={`/public-profile?id=${recipe.user_id}`}
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                        <>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
+                                {recipes.map((recipe) => (
+                                    <div onClick={() => navigate(`/recipe/${recipe.id}`)} key={recipe.id} className="group flex flex-col gap-2 cursor-pointer relative">
+                                        <div className="w-full overflow-hidden rounded-xl aspect-square relative shadow-sm border border-gray-100 dark:border-gray-800">
+                                            <div className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url("${recipe.main_image_url || 'https://placehold.co/600x400'}")` }}></div>
+                                            {recipe.regions?.name && (
+                                                <div className="absolute top-2 left-2">
+                                                    <span className="bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-text-main dark:text-white shadow-sm">{recipe.regions.name}</span>
+                                                </div>
+                                            )}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handleBookmarkToggle(recipe.id);
+                                                }}
+                                                className={`absolute top-2 right-2 p-1.5 rounded-full backdrop-blur transition-colors shadow-sm ${bookmarkedRecipeIds.has(recipe.id) ? 'bg-primary/20 text-primary hover:bg-primary/30' : 'bg-white/30 text-white hover:bg-white/50'}`}
                                             >
-                                                <div className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 bg-cover bg-center shrink-0" style={{ backgroundImage: `url("${recipe.user_profiles?.avatar_url || 'https://placehold.co/100x100'}")` }}></div>
-                                                <p className="text-[10px] md:text-xs text-text-sub dark:text-gray-400 font-medium truncate max-w-[80px] md:max-w-none hover:underline">
-                                                    {recipe.user_profiles?.full_name || 'Chef'}
-                                                </p>
-                                            </Link>
+                                                <span className={`material-symbols-outlined text-[18px] ${bookmarkedRecipeIds.has(recipe.id) ? 'fill-current' : ''}`}>
+                                                    {bookmarkedRecipeIds.has(recipe.id) ? 'bookmark' : 'bookmark_border'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                        <div className="px-1">
+                                            <h3 className="text-text-main dark:text-white text-sm md:text-lg font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-1">{recipe.title}</h3>
+                                            <div className="flex items-center gap-1.5 relative z-10">
+                                                <Link
+                                                    to={`/public-profile?id=${recipe.user_id}`}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                                                >
+                                                    <div className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 bg-cover bg-center shrink-0" style={{ backgroundImage: `url("${recipe.user_profiles?.avatar_url || 'https://placehold.co/100x100'}")` }}></div>
+                                                    <p className="text-[10px] md:text-xs text-text-sub dark:text-gray-400 font-medium truncate max-w-[80px] md:max-w-none hover:underline">
+                                                        {recipe.user_profiles?.full_name || 'Chef'}
+                                                    </p>
+                                                </Link>
+                                            </div>
                                         </div>
                                     </div>
+                                ))}
+                            </div>
+
+                            {/* Numbered Pagination */}
+                            {totalPages > 1 && (
+                                <div className="flex justify-center items-center gap-2 mt-12 mb-8">
+                                    <button
+                                        onClick={() => handlePageChange(page - 1)}
+                                        disabled={page === 0}
+                                        className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined">chevron_left</span>
+                                    </button>
+
+                                    {/* Page Numbers */}
+                                    <div className="flex gap-2">
+                                        {[...Array(totalPages)].map((_, idx) => {
+                                            // Show limited pages logic could go here (e.g. 1, 2, ..., 10)
+                                            // For now, simple list. If pages > 5, we might want to truncate.
+                                            // Simple truncation logic:
+                                            if (
+                                                idx === 0 || // First
+                                                idx === totalPages - 1 || // Last
+                                                (idx >= page - 1 && idx <= page + 1) // Around current
+                                            ) {
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => handlePageChange(idx)}
+                                                        className={`w-10 h-10 flex items-center justify-center rounded-full font-bold text-sm transition-all ${page === idx
+                                                                ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-110'
+                                                                : 'bg-white dark:bg-card-dark text-text-secondary border border-gray-200 dark:border-gray-700 hover:border-primary hover:text-primary'
+                                                            }`}
+                                                    >
+                                                        {idx + 1}
+                                                    </button>
+                                                );
+                                            } else if (
+                                                (idx === page - 2 && page > 2) ||
+                                                (idx === page + 2 && page < totalPages - 3)
+                                            ) {
+                                                return <span key={idx} className="flex items-end px-1">...</span>;
+                                            }
+                                            return null;
+                                        })}
+                                    </div>
+
+                                    <button
+                                        onClick={() => handlePageChange(page + 1)}
+                                        disabled={page === totalPages - 1}
+                                        className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined">chevron_right</span>
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
+                            )}
+                        </>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-20 bg-background-light dark:bg-surface-dark border border-dashed border-gray-300 dark:border-gray-700 rounded-2xl">
                             <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">search_off</span>

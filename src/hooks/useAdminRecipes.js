@@ -107,14 +107,30 @@ export function useAdminRecipes(statusFilter = 'pending') {
                 .from('recipes')
                 .update({
                     status: newStatus,
-                    updated_at: new Date().toISOString() // Explicitly set updated_at
+                    updated_at: new Date().toISOString()
                 })
                 .eq('id', recipeId);
 
             if (error) throw error;
 
-            // Success: Realtime subscription will handle the "Add to destination tab" logic
-            // The "Remove from source tab" is already handled optimally here.
+            // If approving (status → 'published'), notify followers
+            if (newStatus === 'published') {
+                try {
+                    // Fetch recipe owner to send notifications to their followers
+                    const { data: recipe } = await supabase
+                        .from('recipes')
+                        .select('user_id')
+                        .eq('id', recipeId)
+                        .single();
+
+                    if (recipe) {
+                        const { notifyFollowersOfUpload } = await import('../lib/interactionService');
+                        notifyFollowersOfUpload(recipe.user_id, recipeId);
+                    }
+                } catch (notifError) {
+                    console.error('⚠️ Fan-out notification failed:', notifError);
+                }
+            }
 
         } catch (err) {
             console.error('🔴 Failed to update status:', err);
@@ -126,11 +142,39 @@ export function useAdminRecipes(statusFilter = 'pending') {
         }
     };
 
+    /**
+     * Permanently delete a recipe
+     * @param {string} recipeId 
+     */
+    const deleteRecipe = async (recipeId) => {
+        if (processingRef.current.has(recipeId)) return;
+        processingRef.current.add(recipeId);
+
+        const previousRecipes = [...recipes];
+        setRecipes(prev => prev.filter(r => r.id !== recipeId));
+
+        try {
+            const { error } = await supabase
+                .from('recipes')
+                .delete()
+                .eq('id', recipeId);
+
+            if (error) throw error;
+        } catch (err) {
+            console.error('🔴 Failed to delete recipe:', err);
+            setRecipes(previousRecipes);
+            setError(`Gagal menghapus resep: ${err.message}`);
+        } finally {
+            processingRef.current.delete(recipeId);
+        }
+    };
+
     return {
         recipes,
         loading,
         error,
         refresh: fetchRecipes,
-        updateStatus
+        updateStatus,
+        deleteRecipe
     };
 }

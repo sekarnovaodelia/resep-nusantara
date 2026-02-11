@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { RecipeProvider } from './context/RecipeContext';
 import { SocialProvider } from './context/SocialContext';
 import { BookmarkProvider } from './context/BookmarkContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
 import Footer from './components/Footer';
@@ -42,9 +43,11 @@ const App = () => {
       <RecipeProvider>
         <SocialProvider>
           <BookmarkProvider>
-            <Router>
-              <MainLayout darkMode={darkMode} setDarkMode={setDarkMode} />
-            </Router>
+            <NotificationProvider>
+              <Router>
+                <MainLayout darkMode={darkMode} setDarkMode={setDarkMode} />
+              </Router>
+            </NotificationProvider>
           </BookmarkProvider>
         </SocialProvider>
       </RecipeProvider>

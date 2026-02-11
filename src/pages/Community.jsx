@@ -30,8 +30,8 @@ const Community = () => {
     useEffect(() => {
         const loadUserRecipes = async () => {
             if (user) {
-                const recipes = await fetchRecipes({ userId: user.id, limit: 100 });
-                setUserRecipes(recipes);
+                const { data } = await fetchRecipes({ userId: user.id, limit: 100 });
+                setUserRecipes(data);
             }
         };
         loadUserRecipes();
