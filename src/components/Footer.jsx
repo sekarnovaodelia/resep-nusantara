@@ -1,85 +1,81 @@
-import React from 'react';
+import React from "react";
 
 const Footer = () => {
+    // Foto member placeholder (bisa diganti url asli nanti)
+    const team = [
+        {
+            name: "Sekar Nova",
+            role: "Frontend Developer",
+            img: "/team/sekar1.jpeg",
+        },
+        {
+            name: "Arista Vania",
+            role: "UI/UX Designer",
+            img: "/team/arista.jpeg",
+        },
+        {
+            name: "Syamil ikhsan",
+            role: "Backend Developer",
+            img: "/team/samil.jpeg",
+        },
+        {
+            name: "Atha Yan",
+            role: "Database Engineer",
+            img: "/team/atha.jpeg",
+        },
+    ];
+
     return (
-        <footer className="mt-12 pt-16 pb-8 bg-background-light dark:bg-background-dark border-t border-primary/10">
-            <div className="layout-container max-w-[1440px] mx-auto px-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
+        <footer className="mt-auto pt-16 pb-8 bg-surface-light dark:bg-[#1E1611] border-t border-border-light dark:border-[#3E3228] transition-colors duration-200">
+            <div className="container max-w-7xl mx-auto px-6 lg:px-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24 mb-16">
+
+                    {/* Tentang Kami */}
                     <div className="flex flex-col gap-6">
-                        <div className="flex items-center gap-2 text-primary">
-                            <span className="material-symbols-outlined !text-3xl">restaurant</span>
-                            <h2 className="text-text-main dark:text-white text-xl font-bold">Resep Nusantara</h2>
+                        <div className="flex items-center gap-3 text-primary">
+                            <span className="material-symbols-outlined text-4xl">restaurant_menu</span>
+                            <h2 className="text-2xl font-black tracking-tight text-text-main-light dark:text-[#F3ECE7]">
+                                Resep Nusantara
+                            </h2>
                         </div>
-                        <p className="text-text-secondary dark:text-gray-400 text-sm leading-relaxed">
-                            Platform komunitas kuliner terbesar di Indonesia. Menghubungkan pecinta masakan Nusantara
-                            melalui resep autentik dan cerita di balik setiap hidangan.
-                        </p>
-                        <div className="flex gap-4">
-                            <a className="w-10 h-10 rounded-full bg-accent dark:bg-accent-dark flex items-center justify-center text-text-secondary hover:bg-primary hover:text-white transition-all" href="#">
-                                <span className="material-symbols-outlined text-lg">public</span>
-                            </a>
-                            <a className="w-10 h-10 rounded-full bg-accent dark:bg-accent-dark flex items-center justify-center text-text-secondary hover:bg-primary hover:text-white transition-all" href="#">
-                                <span className="material-symbols-outlined text-lg">photo_camera</span>
-                            </a>
-                            <a className="w-10 h-10 rounded-full bg-accent dark:bg-accent-dark flex items-center justify-center text-text-secondary hover:bg-primary hover:text-white transition-all" href="#">
-                                <span className="material-symbols-outlined text-lg">smart_display</span>
-                            </a>
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold text-text-main-light dark:text-[#F3ECE7]">Tentang Kami</h3>
+                            <p className="text-text-secondary dark:text-[#9C8E84] leading-relaxed max-w-md">
+                                Platform berbagi resep masakan khas nusantara yang dibuat dengan cinta untuk melestarikan kuliner Indonesia.
+                                Temukan, masak, dan bagikan kelezatan cita rasa asli Indonesia.
+                            </p>
                         </div>
                     </div>
+
+                    {/* Tim Kami (Foto Member) */}
                     <div className="flex flex-col gap-6">
-                        <h4 className="font-bold text-text-main dark:text-white text-lg relative w-fit after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-8 after:h-1 after:bg-primary after:rounded-full">
-                            Jelajahi
-                        </h4>
-                        <div className="flex flex-col gap-3">
-                            <a className="text-text-secondary dark:text-gray-400 hover:text-primary transition-colors text-sm" href="#">Resep Terbaru</a>
-                            <a className="text-text-secondary dark:text-gray-400 hover:text-primary transition-colors text-sm" href="#">Resep Populer</a>
-                            <a className="text-text-secondary dark:text-gray-400 hover:text-primary transition-colors text-sm" href="#">Kategori Pilihan</a>
-                            <a className="text-text-secondary dark:text-gray-400 hover:text-primary transition-colors text-sm" href="#">Koleksi Spesial</a>
-                            <a className="text-text-secondary dark:text-gray-400 hover:text-primary transition-colors text-sm" href="#">Video Masak</a>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-6">
-                        <h4 className="font-bold text-text-main dark:text-white text-lg relative w-fit after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-8 after:h-1 after:bg-primary after:rounded-full">
-                            Perusahaan
-                        </h4>
-                        <div className="flex flex-col gap-3">
-                            <a className="text-text-secondary dark:text-gray-400 hover:text-primary transition-colors text-sm" href="#">Tentang Kami</a>
-                            <a className="text-text-secondary dark:text-gray-400 hover:text-primary transition-colors text-sm" href="#">Karir</a>
-                            <a className="text-text-secondary dark:text-gray-400 hover:text-primary transition-colors text-sm" href="#">Hubungi Kami</a>
-                            <a className="text-text-secondary dark:text-gray-400 hover:text-primary transition-colors text-sm" href="#">Mitra & Partner</a>
-                            <a className="text-text-secondary dark:text-gray-400 hover:text-primary transition-colors text-sm" href="#">Kebijakan Privasi</a>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-6">
-                        <h4 className="font-bold text-text-main dark:text-white text-lg relative w-fit after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-8 after:h-1 after:bg-accent-pandan after:rounded-full">
-                            Unduh Aplikasi
-                        </h4>
-                        <p className="text-sm text-text-secondary dark:text-gray-400">Masak lebih mudah dengan aplikasi Resep Nusantara.</p>
-                        <div className="flex flex-col gap-3">
-                            <button className="flex items-center gap-3 bg-black text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition-colors">
-                                <span className="material-symbols-outlined text-3xl">android</span>
-                                <div className="text-left">
-                                    <div className="text-[10px] uppercase">Get it on</div>
-                                    <div className="text-sm font-bold leading-none">Google Play</div>
+                        <h3 className="text-lg font-bold text-text-main-light dark:text-[#F3ECE7]">Tim Kami</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                            {team.map((member, i) => (
+                                <div key={i} className="flex flex-col items-center text-center group">
+                                    <div className="relative mb-3">
+                                        <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary transition-colors bg-gray-100 dark:bg-gray-800">
+                                            <img
+                                                src={member.img}
+                                                alt={member.name}
+                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                            />
+                                        </div>
+                                    </div>
+                                    <h4 className="font-bold text-sm text-text-main-light dark:text-[#F3ECE7] mb-1">
+                                        {member.name}
+                                    </h4>
                                 </div>
-                            </button>
-                            <button className="flex items-center gap-3 bg-black text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition-colors">
-                                <span className="material-symbols-outlined text-3xl">phone_iphone</span>
-                                <div className="text-left">
-                                    <div className="text-[10px] uppercase">Download on the</div>
-                                    <div className="text-sm font-bold leading-none">App Store</div>
-                                </div>
-                            </button>
+                            ))}
                         </div>
                     </div>
                 </div>
-                <div className="pt-8 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-xs text-text-secondary dark:text-gray-500">© 2023 Resep Nusantara. All rights reserved.</p>
-                    <div className="flex gap-6 text-xs text-text-secondary dark:text-gray-500">
-                        <a className="hover:text-primary" href="#">Syarat & Ketentuan</a>
-                        <a className="hover:text-primary" href="#">Kebijakan Cookie</a>
-                        <a className="hover:text-primary" href="#">Peta Situs</a>
-                    </div>
+
+                {/* Copyright */}
+                <div className="pt-8 border-t border-border-light dark:border-[#3E3228] text-center">
+                    <p className="text-sm text-text-secondary dark:text-[#9C8E84]">
+                        © {new Date().getFullYear()} Resep Nusantara. Dibuat untuk Project Sekolah.
+                    </p>
                 </div>
             </div>
         </footer>

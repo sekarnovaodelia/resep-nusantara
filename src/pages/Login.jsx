@@ -50,7 +50,7 @@ const Login = () => {
             <div className="hidden lg:flex lg:w-1/2 relative bg-surface-dark items-center justify-center overflow-hidden">
                 <div
                     className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 ease-in-out hover:scale-105"
-                    style={{ backgroundImage: "url('')" }}
+                    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1680173073730-852e0ec93bec?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')" }}
                 >
                 </div>
                 {/* Overlay for atmosphere */}

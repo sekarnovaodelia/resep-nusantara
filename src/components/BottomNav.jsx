@@ -35,9 +35,9 @@ const BottomNav = () => {
 
     const navItems = [
         { label: 'Home', icon: 'home', path: '/' },
-        { label: 'Komunitas', icon: 'group', path: '/community' },
-        { label: 'Upload', icon: 'add', path: '/upload-recipe', isFab: true },
         { label: 'Planner', icon: 'event_note', path: '/planner' },
+        { label: 'Upload', icon: 'add', path: '/upload-recipe', isFab: true },
+        { label: 'Komunitas', icon: 'group', path: '/community' },
         { label: 'Notifikasi', icon: 'notifications', path: '/notifications', badge: unreadCount > 0 },
     ];
 

@@ -112,6 +112,16 @@ const Profile = () => {
     const username = profile?.username || user?.user_metadata?.username || 'user';
     const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(displayName) + '&background=EA6A12&color=fff';
 
+    const [selectedRecipe, setSelectedRecipe] = React.useState(null);
+
+    const handleRecipeClick = (e, recipe) => {
+        // Detect mobile (simplified check, can be improved with hooks if needed)
+        if (window.innerWidth < 768) {
+            e.preventDefault();
+            setSelectedRecipe(recipe);
+        }
+    };
+
     return (
         <div className="layout-container flex justify-center py-8 px-4 sm:px-6 lg:px-8 flex-1">
             <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
@@ -192,49 +202,53 @@ const Profile = () => {
                                 const statusBadge = getStatusBadge(recipe.status);
                                 const canEdit = activeTab === 'my_recipes' && recipe.status !== 'published';
                                 return (
-                                <div key={recipe.id} className="group flex flex-col gap-2 relative">
-                                    <Link to={`/recipe/${recipe.id}`} className="flex flex-col gap-2 cursor-pointer">
-                                        <div className="w-full overflow-hidden rounded-xl aspect-square relative shadow-sm border border-gray-100 dark:border-gray-800">
-                                            <div className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url("${recipe.main_image_url || 'https://placehold.co/400x400'}")` }}></div>
-                                            {recipe.regions?.name && (
-                                                <div className="absolute top-2 left-2">
-                                                    <span className="bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-text-main dark:text-white shadow-sm">{recipe.regions.name}</span>
-                                                </div>
-                                            )}
-                                            {activeTab === 'my_recipes' && recipe.status && (
-                                                <div className="absolute top-2 right-2">
-                                                    <span className={`${statusBadge.color} px-2 py-1 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wider shadow-sm`}>{statusBadge.label}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="px-1">
-                                            <h3 className="text-text-main dark:text-white text-sm md:text-base font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">{recipe.title}</h3>
-                                            <div className="flex items-center gap-1 mt-1">
-                                                <span className="material-symbols-outlined text-[14px] text-yellow-500">star</span>
-                                                <span className="text-xs font-medium text-text-sub dark:text-gray-400">4.8</span>
-                                            </div>
-                                        </div>
-                                    </Link>
-
-                                    {/* Action Overlay - Lihat / Edit for my_recipes */}
-                                    {activeTab === 'my_recipes' && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" onClick={(e) => e.stopPropagation()}>
-                                            <div className="flex flex-col gap-3">
-                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/recipe/${recipe.id}`); }} className="px-4 py-2 bg-white text-text-main font-bold rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2">
-                                                    <span className="material-symbols-outlined">visibility</span>
-                                                    Lihat
-                                                </button>
-                                                {canEdit && (
-                                                    <Link to={`/recipe/${recipe.id}/edit`} onClick={(e) => e.stopPropagation()} className="px-4 py-2 bg-white text-primary font-bold rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2">
-                                                        <span className="material-symbols-outlined">edit</span>
-                                                        Edit
-                                                    </Link>
+                                    <div key={recipe.id} className="group flex flex-col gap-2 relative">
+                                        <Link
+                                            to={`/recipe/${recipe.id}`}
+                                            onClick={(e) => handleRecipeClick(e, recipe)}
+                                            className="flex flex-col gap-2 cursor-pointer"
+                                        >
+                                            <div className="w-full overflow-hidden rounded-xl aspect-square relative shadow-sm border border-gray-100 dark:border-gray-800">
+                                                <div className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url("${recipe.main_image_url || 'https://placehold.co/400x400'}")` }}></div>
+                                                {recipe.regions?.name && (
+                                                    <div className="absolute top-2 left-2">
+                                                        <span className="bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-text-main dark:text-white shadow-sm">{recipe.regions.name}</span>
+                                                    </div>
+                                                )}
+                                                {activeTab === 'my_recipes' && recipe.status && (
+                                                    <div className="absolute top-2 right-2">
+                                                        <span className={`${statusBadge.color} px-2 py-1 rounded text-[9px] md:text-[10px] font-bold uppercase tracking-wider shadow-sm`}>{statusBadge.label}</span>
+                                                    </div>
                                                 )}
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
+                                            <div className="px-1">
+                                                <h3 className="text-text-main dark:text-white text-sm md:text-base font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">{recipe.title}</h3>
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <span className="material-symbols-outlined text-[14px] text-yellow-500">star</span>
+                                                    <span className="text-xs font-medium text-text-sub dark:text-gray-400">4.8</span>
+                                                </div>
+                                            </div>
+                                        </Link>
+
+                                        {/* Desktop Action Overlay - Lihat / Edit for my_recipes */}
+                                        {activeTab === 'my_recipes' && (
+                                            <div className="hidden md:flex absolute inset-0 items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex flex-col gap-3">
+                                                    <button onClick={(e) => { e.stopPropagation(); navigate(`/recipe/${recipe.id}`); }} className="px-4 py-2 bg-white text-text-main font-bold rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2">
+                                                        <span className="material-symbols-outlined">visibility</span>
+                                                        Lihat
+                                                    </button>
+                                                    {canEdit && (
+                                                        <Link to={`/recipe/${recipe.id}/edit`} onClick={(e) => e.stopPropagation()} className="px-4 py-2 bg-white text-primary font-bold rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2">
+                                                            <span className="material-symbols-outlined">edit</span>
+                                                            Edit
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
                             })}
                         </div>
                     ) : (
@@ -275,6 +289,46 @@ const Profile = () => {
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
             />
+
+            {/* Mobile Action Sheet */}
+            {selectedRecipe && (
+                <div className="fixed inset-0 z-50 flex items-end justify-center md:hidden" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setSelectedRecipe(null)}>
+                    <div
+                        className="bg-white dark:bg-surface-dark w-full rounded-t-2xl p-6 animate-in slide-in-from-bottom duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6"></div>
+                        <h3 className="text-lg font-bold text-text-main dark:text-white mb-6 line-clamp-1">{selectedRecipe.title}</h3>
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => navigate(`/recipe/${selectedRecipe.id}`)}
+                                className="w-full py-3.5 bg-primary/10 text-primary rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                            >
+                                <span className="material-symbols-outlined">visibility</span>
+                                Lihat Resep
+                            </button>
+
+                            {activeTab === 'my_recipes' && selectedRecipe.status !== 'published' && (
+                                <button
+                                    onClick={() => navigate(`/recipe/${selectedRecipe.id}/edit`)}
+                                    className="w-full py-3.5 bg-gray-100 dark:bg-white/5 text-text-main dark:text-white rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                                >
+                                    <span className="material-symbols-outlined">edit</span>
+                                    Edit Resep
+                                </button>
+                            )}
+
+                            <button
+                                onClick={() => setSelectedRecipe(null)}
+                                className="w-full py-3.5 mt-2 bg-transparent border border-gray-200 dark:border-gray-700 text-text-sub dark:text-gray-400 rounded-xl font-bold active:scale-95 transition-transform"
+                            >
+                                Batal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

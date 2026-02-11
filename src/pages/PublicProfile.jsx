@@ -98,7 +98,7 @@ const PublicProfile = () => {
         try {
             const newStatus = await toggleFollow(user.id, profileId);
             setUserIsFollowing(newStatus);
-            
+
             // Update global social context
             updateFollowingStatus(profileId, newStatus);
 
@@ -247,25 +247,6 @@ const PublicProfile = () => {
                                     <div className="p-4 flex flex-col gap-3">
                                         <div className="flex justify-between items-start">
                                             <h3 className="text-text-main dark:text-white font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">{recipe.title}</h3>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-xs text-text-sub dark:text-gray-400 font-medium">
-                                            <div className="flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-[16px]">timer</span>
-                                                {recipe.cook_time || '-'}
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-[16px]">signal_cellular_alt</span>
-                                                {recipe.difficulty || 'Sedang'}
-                                            </div>
-                                        </div>
-                                        <div className="mt-2 pt-3 border-t border-[#f3ece7] dark:border-[#3a2e25] flex justify-between items-center">
-                                            <div className="flex gap-2">
-                                                {/* Placeholder likes for now, or join if available */}
-                                                <span className="text-xs text-text-sub">Lihat Detail</span>
-                                            </div>
-                                            <button className="text-text-sub hover:text-primary transition-colors">
-                                                <span className="material-symbols-outlined text-[20px]">more_horiz</span>
-                                            </button>
                                         </div>
                                     </div>
                                 </Link>

@@ -89,29 +89,26 @@ const Home = () => {
                         <div className="flex flex-col gap-6 w-full lg:w-1/2">
                             <div className="flex flex-col gap-4">
                                 <h1 className="text-text-main dark:text-white text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-[-0.033em]">
-                                    Rendang Daging <span className="text-primary">Khas Padang</span>
+                                    Nasi Liwet <span className="text-primary">Khas Sunda</span>
                                 </h1>
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-cover bg-center ring-2 ring-white" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBiudVFcBmZ9AfmiNoLPKubaTtsZW3IkqNPN5VVx5viH8zqJBcEB6zfyxrL0fzs5v3kx4u1iVtBHOTjmK5gZ0u_piHfwNVBKMw2Im7ftgTnDi-sTIwWIleVxi35QdeUpfVCD-qV1rD2FU7A4E36bPUuK4Vr73a9puWe-eEnahuT0DP4Pmnp1_8IemxOISLa3s772NecnAxz-RIYFfg-owYOBl_qz7UlITLiwNfsNjxP74nggi3hroxH18Iwstcqxy6cvjOqNXf4BJE2")' }}></div>
-                                    <p className="text-sm font-medium text-text-main dark:text-white">Oleh <span className="text-primary font-bold">Chef Siti</span></p>
+                                    <div className="w-8 h-8 rounded-full bg-cover bg-center ring-2 ring-white" style={{ backgroundImage: 'url("https://ui-avatars.com/api/?name=AT&background=EA6A12&color=fff")' }}></div>
+                                    <p className="text-sm font-medium text-text-main dark:text-white">Oleh <span className="text-primary font-bold">Ataa</span></p>
                                 </div>
                                 <p className="text-text-secondary dark:text-gray-200 text-lg font-normal leading-relaxed">
-                                    "Resep rendang asli Payakumbuh yang dimasak perlahan dengan santan kental dan rempah-rempah pilihan hingga bumbu meresap sempurna."
+                                    "Nasi liwet merupakan makanan tradisional khas Indonesia yang berasal dari Jawa, khususnya Solo (Surakarta) dan Sunda (Jawa Barat). Kata “liwet” berasal dari bahasa Jawa yang berarti memasak nasi dengan santan dan bumbu sehingga menghasilkan nasi yang gurih dan harum."
                                 </p>
                             </div>
                             <div className="flex gap-4 mt-2">
-                                <Link to="/recipe/rendang" className="flex w-fit cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-8 bg-primary hover:bg-terracotta-dark transition-colors text-white text-base font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/30">
+                                <Link to="/recipe/a6d3214c-0485-442c-97fe-e0fa96db47af" className="flex w-fit cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-8 bg-primary hover:bg-terracotta-dark transition-colors text-white text-base font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/30">
                                     <span className="mr-2 material-symbols-outlined">restaurant_menu</span>
                                     <span className="truncate">Lihat Resep</span>
                                 </Link>
-                                <button className="flex w-12 h-12 cursor-pointer items-center justify-center rounded-xl bg-background-light dark:bg-accent-dark hover:bg-accent dark:hover:bg-accent-dark/80 transition-colors text-text-main dark:text-white shadow-sm border border-primary/10">
-                                    <span className="material-symbols-outlined">bookmark</span>
-                                </button>
                             </div>
                         </div>
                         <div className="w-full lg:w-1/2 relative group">
                             <div className="absolute inset-0 bg-black/10 rounded-2xl rotate-3 transform transition-transform group-hover:rotate-6"></div>
-                            <div className="w-full h-full min-h-[300px] lg:min-h-[400px] bg-center bg-no-repeat bg-cover rounded-2xl shadow-xl relative z-10" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCuonMqfbD4UwTdSTu_S07nedh_XNT-eRqd4uMOH83FSqmdVOS1mh0Kknq9Zo8LZNGM83y8hj2mFKAi0T70JNoKKhYXJcrkopvift42INd31KGrA_Qf-fmKcvgOvfdDiiaXy3lhdTPm5fvC3KZGJUA9lnD5guGkbtMBbxVE5x7r86nOXR9p4tpSHAi2SDGpmt56BdB9JfA81T3vT67T7uriRAZ8vy1GYG9s6mlK7icqqvB5J9mIL3pw-x7M8LDOEjtgBq6zctdsATV4")' }}>
+                            <div className="w-full h-full min-h-[300px] lg:min-h-[400px] bg-center bg-no-repeat bg-cover rounded-2xl shadow-xl relative z-10" style={{ backgroundImage: 'url("https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770187319968_jeb9z.jpg")' }}>
                                 <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-black/80 backdrop-blur px-4 py-2 rounded-lg shadow-lg">
                                     <span className="text-xs font-bold uppercase tracking-wider text-text-secondary dark:text-gray-400">Paling Dicari</span>
                                 </div>
@@ -158,12 +155,12 @@ const Home = () => {
 
                         {/* Chef Recommendation - Moved here */}
                         <div className="flex gap-4 items-center bg-accent dark:bg-accent-dark/30 p-2 rounded-xl border border-primary/10 self-stretch md:self-auto">
-                            <span className="text-xs font-bold uppercase tracking-wider text-primary px-2">Rekomendasi Chef</span>
+                            <span className="text-xs font-bold uppercase tracking-wider text-primary px-2">Rekomendasi Kami</span>
                             <div className="w-px h-8 bg-primary/20"></div>
                             {[
-                                { title: "Nasi Goreng Kampung", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuByg5jxqle7nHuppOMXhJdVandrhYIwOq7fTwtbeaba8yyTIiqU3TNyuCvQWF79BQ5NrtxpLXjpgXf_iunQW-e9P2kffyxRbBZGHTsXRn1PDX5HKVh5LAAB6tnvxACjc6m-ejxqHuVh4JQuT5JcS2PmRa3Blrnfc_L9D3iG6rEYpc_DkqH1SQdYAG-K9ShUzH54WEw_-9PpouzEbbggzLzaxQPXiezdbjKUbgVmVbyE8b3yTwr1XEGMEhPKUFtTJnqgYCa97428IAhE" },
+                                { title: "Tekwan Ikan Tenggiri", img: "https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770273093607_zeezun.jfif" },
                             ].map((chefRec, idx) => (
-                                <div key={idx} className="flex gap-3 items-center group cursor-pointer hover:opacity-80 transition-all">
+                                <div key={idx} onClick={() => navigate(`/recipe/${chefRec.id}`)} className="flex gap-3 items-center group cursor-pointer hover:opacity-80 transition-all">
                                     <div className="w-10 h-10 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: `url("${chefRec.img}")` }}></div>
                                     <div className="flex flex-col w-32 lg:w-40">
                                         <h4 className="text-text-main dark:text-white font-bold text-xs leading-tight truncate">{chefRec.title}</h4>
