@@ -5,22 +5,18 @@ const Footer = () => {
     const team = [
         {
             name: "Sekar Nova",
-            role: "Frontend Developer",
             img: "/team/sekar1.jpeg",
         },
         {
             name: "Arista Vania",
-            role: "UI/UX Designer",
             img: "/team/arista.jpeg",
         },
         {
             name: "Syamil ikhsan",
-            role: "Backend Developer",
             img: "/team/samil.jpeg",
         },
         {
             name: "Atha Yan",
-            role: "Database Engineer",
             img: "/team/atha.jpeg",
         },
     ];

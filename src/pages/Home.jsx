@@ -130,7 +130,7 @@ const Home = () => {
                             <div className="absolute inset-0 bg-black/10 rounded-2xl rotate-3 transform transition-transform group-hover:rotate-6"></div>
                             <div className="w-full h-full min-h-[300px] lg:min-h-[400px] bg-center bg-no-repeat bg-cover rounded-2xl shadow-xl relative z-10" style={{ backgroundImage: `url('${getOptimizedImageUrl("https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770187319968_jeb9z.jpg", { width: 1000 })}')` }}>
                                 <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-black/80 backdrop-blur px-4 py-2 rounded-lg shadow-lg">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-text-secondary dark:text-gray-400">Paling Dicari</span>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-orange-500">Paling Dicari</span>
                                 </div>
                             </div>
                         </div>
