@@ -1,37 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 
 const BottomNav = () => {
     const { user } = useAuth();
     const location = useLocation();
-    const [unreadCount, setUnreadCount] = useState(0);
-
-    // Fetch unread notifications for badge
-    useEffect(() => {
-        let isMounted = true;
-        const fetchUnread = async () => {
-            if (user?.id) {
-                const { supabase } = await import('../lib/supabaseClient');
-                const { count } = await supabase
-                    .from('notifications')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', user.id)
-                    .eq('is_read', false);
-
-                if (isMounted && count !== null) {
-                    setUnreadCount(count);
-                }
-            }
-        };
-
-        fetchUnread();
-        const interval = setInterval(fetchUnread, 30000); // Poll every 30s
-        return () => {
-            isMounted = false;
-            clearInterval(interval);
-        };
-    }, [user, location.pathname]); // Update on navigation too (e.g. leaving notifications page)
+    const { unreadCount } = useNotifications();
 
     const navItems = [
         { label: 'Home', icon: 'home', path: '/' },

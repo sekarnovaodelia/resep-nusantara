@@ -3,6 +3,7 @@
 @theme {
   --color-terracotta: #C04D29;
   --color-terracotta-dark: #A03D1F;
+  --color-primary-dark: #F27541;
   --color-primary: var(--color-terracotta);
 
   --color-background-light: #f8f7f6;
@@ -34,6 +35,10 @@ body {
   font-family: var(--font-display);
   background-color: var(--color-background-light);
   color: var(--color-text-main);
+}
+
+.dark {
+  --color-primary: var(--color-primary-dark);
 }
 
 .dark body {

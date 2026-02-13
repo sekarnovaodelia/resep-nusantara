@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import SearchDropdown from './SearchDropdown';
 import SearchMobileModal from './SearchMobileModal';
 import ConfirmationModal from './ConfirmationModal';
@@ -14,38 +15,9 @@ const Navbar = ({ darkMode, setDarkMode }) => {
     const profileRef = useRef(null);
     const searchRef = useRef(null);
     const navigate = useNavigate();
-    const [unreadCount, setUnreadCount] = useState(0);
 
     const { user, profile, loading, signOut } = useAuth();
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const fetchUnread = async () => {
-            if (user?.id) {
-                const { supabase } = await import('../lib/supabaseClient');
-                const { count } = await supabase
-                    .from('notifications')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', user.id)
-                    .eq('is_read', false);
-
-                if (isMounted && count !== null) {
-                    setUnreadCount(count);
-                }
-            }
-        };
-
-        fetchUnread();
-
-        // Optional: Polling every 30s
-        const interval = setInterval(fetchUnread, 30000);
-
-        return () => {
-            isMounted = false;
-            clearInterval(interval);
-        };
-    }, [user]);
+    const { unreadCount } = useNotifications();
 
     const closeSearch = () => {
         setIsSearchModalOpen(false);

@@ -23,16 +23,23 @@ export const NotificationProvider = ({ children }) => {
     const isFetchingRef = useRef(false);
     const lastPollTimeRef = useRef(0);
     const mountedRef = useRef(false);
+    const userIdRef = useRef(null);
 
-    // Fetch count (HEAD request) — no internal guard, caller is responsible
+    // Keep userIdRef in sync
+    useEffect(() => {
+        userIdRef.current = user?.id || null;
+    }, [user?.id]);
+
+    // Fetch count (HEAD request)
     const fetchUnreadCount = useCallback(async () => {
-        if (!user) return;
+        const uid = userIdRef.current;
+        if (!uid) return;
 
         try {
             const { count, error } = await supabase
                 .from('notifications')
                 .select('*', { count: 'exact', head: true })
-                .eq('user_id', user.id)
+                .eq('user_id', uid)
                 .eq('is_read', false);
 
             if (!error && count !== null) {
@@ -41,7 +48,7 @@ export const NotificationProvider = ({ children }) => {
         } catch (err) {
             console.error('Error fetching unread count:', err);
         }
-    }, [user]);
+    }, []); // Stable — uses ref internally
 
     // Fetch full list
     const loadNotifications = useCallback(async () => {
@@ -67,7 +74,7 @@ export const NotificationProvider = ({ children }) => {
             intervalRef.current = null;
         }
 
-        if (!user) {
+        if (!user?.id) {
             setUnreadCount(0);
             setNotifications([]);
             return;
@@ -118,8 +125,7 @@ export const NotificationProvider = ({ children }) => {
             }
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user]);
+    }, [user?.id, fetchUnreadCount]);
 
     // Actions
     const markRead = async (id) => {
