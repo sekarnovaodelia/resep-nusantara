@@ -2,11 +2,11 @@ import React from 'react';
 
 const SearchDropdown = ({ isOpen, onClose, searchQuery, setSearchQuery, onSearch }) => {
     const trendingSearches = [
-        'Nasi Goreng',
-        'Sate Ayam',
-        'Rendang Sapi',
-        'Soto Betawi',
-        'Gado-gado'
+        'Soto Ayam',
+        'Seblak',
+        'Ketoprak',
+        'Sate Lilit',
+        'Gulai Tunjang'
     ];
 
     if (!isOpen) return null;

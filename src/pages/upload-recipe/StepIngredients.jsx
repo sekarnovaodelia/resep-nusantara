@@ -59,14 +59,12 @@ const StepIngredients = ({ onNext, onBack, onSaveDraft, isPublishing }) => {
                     <span className="material-symbols-outlined">add_circle</span> Tambah Bahan
                 </button>
 
-                <div className="flex justify-between pt-6 border-t border-border-light dark:border-border-dark">
-                    <button onClick={onBack} className="px-5 py-2 rounded-xl border border-border-light dark:border-border-dark font-bold text-sm hover:bg-gray-50">Kembali</button>
-                    <div className="flex gap-3">
-                        <button onClick={onSaveDraft} disabled={isPublishing} className="px-5 py-2 rounded-xl border border-border-light dark:border-border-dark font-bold text-sm hover:bg-gray-50 text-text-secondary">Simpan Draft</button>
-                        <button onClick={onNext} className="px-6 py-2 rounded-xl bg-primary text-white font-bold text-sm hover:bg-orange-600 transition-colors shadow-lg shadow-primary/30 flex items-center gap-2">
-                            Lanjut ke Langkah <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                        </button>
-                    </div>
+                <div className="flex flex-col pt-6 border-t border-border-light dark:border-border-dark gap-3">
+                    <button onClick={onNext} className="w-full py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-orange-600 transition-colors shadow-lg shadow-primary/30 flex justify-center items-center gap-2">
+                        Lanjut ke Langkah <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                    </button>
+                    <button onClick={onSaveDraft} disabled={isPublishing} className="w-full py-3 rounded-xl border border-border-light dark:border-border-dark font-bold text-sm hover:bg-gray-50 text-text-secondary bg-white dark:bg-transparent dark:text-white dark:hover:bg-white/5">Simpan Draft</button>
+                    <button onClick={onBack} className="w-full py-3 rounded-xl border border-transparent font-bold text-sm text-text-secondary hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5">Kembali</button>
                 </div>
             </div>
         </div>

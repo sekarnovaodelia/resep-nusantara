@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { fetchRecipes, fetchRegions } from '../lib/recipeService';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +19,7 @@ const Home = () => {
     const LIMIT = 12;
     const { user } = useAuth();
     const { bookmarkedRecipeIds, toggleBookmark } = useBookmarks();
+    const recipesGridRef = useRef(null);
 
     const handleBookmarkToggle = async (recipeId) => {
         if (!user) {
@@ -58,8 +59,11 @@ const Home = () => {
 
     const loadRecipes = async (pageNum) => {
         setLoading(true);
-        // Scroll to top of grid
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Scroll to grid if ref exists (for pagination/filter), otherwise App's ScrollToTop handles initial load
+        if (pageNum > 0 || searchQuery || selectedRegionId) {
+            recipesGridRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
 
         try {
             const { data, count } = await fetchRecipes({
@@ -158,7 +162,7 @@ const Home = () => {
             </div>
 
             {/* Main Content Grid & Sidebar */}
-            <div className="flex flex-col gap-10">
+            <div className="flex flex-col gap-10" ref={recipesGridRef}>
                 <div className="w-full flex flex-col gap-8">
 
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-4 border-b border-primary/20">
@@ -265,8 +269,8 @@ const Home = () => {
                                                         key={idx}
                                                         onClick={() => handlePageChange(idx)}
                                                         className={`w-10 h-10 flex items-center justify-center rounded-full font-bold text-sm transition-all ${page === idx
-                                                                ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-110'
-                                                                : 'bg-white dark:bg-card-dark text-text-secondary border border-gray-200 dark:border-gray-700 hover:border-primary hover:text-primary'
+                                                            ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-110'
+                                                            : 'bg-white dark:bg-card-dark text-text-secondary border border-gray-200 dark:border-gray-700 hover:border-primary hover:text-primary'
                                                             }`}
                                                     >
                                                         {idx + 1}

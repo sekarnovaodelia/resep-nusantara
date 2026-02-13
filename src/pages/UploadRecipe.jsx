@@ -124,7 +124,9 @@ const UploadRecipe = () => {
         }
 
         const hasValidStep = steps.some(step => step.description.trim() !== '');
-        if (!hasValidStep) {
+
+        // Only validate steps if publishing. Drafts can be partial.
+        if (isPublished && !hasValidStep) {
             alert('Mohon tambahkan setidaknya satu langkah memasak.');
             return;
         }
@@ -171,13 +173,8 @@ const UploadRecipe = () => {
         <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark pb-10 md:pb-0">
             {/* Header */}
             <div className="sticky top-0 z-20 w-full bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-border-light dark:border-border-dark py-3">
-                <div className="max-w-3xl mx-auto px-4 sm:px-6 flex items-center gap-4">
-                    <button
-                        onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate(-1)}
-                    >
-                        <span className="material-symbols-outlined text-2xl">arrow_back</span>
-                    </button>
-                    <h2 className="text-xl font-bold text-text-main dark:text-white tracking-tight">{editId ? 'Edit Resep' : 'Upload Resep'}</h2>
+                <div className="max-w-3xl mx-auto px-4 sm:px-6 flex items-center justify-center relative">
+                    <h2 className="text-xl font-bold text-text-main dark:text-white tracking-tight text-center w-full">{editId ? 'Edit Resep' : 'Upload Resep'}</h2>
                 </div>
             </div>
 
@@ -209,7 +206,7 @@ const UploadRecipe = () => {
 
                 {/* Form Content */}
                 <div className="w-full mx-auto">
-                    {currentStep === 1 && <StepInfo onNext={nextToStep2} onSaveDraft={() => handlePublish(false)} isPublishing={isPublishing} />}
+                    {currentStep === 1 && <StepInfo onNext={nextToStep2} onBack={() => navigate(-1)} onSaveDraft={() => handlePublish(false)} isPublishing={isPublishing} />}
                     {currentStep === 2 && <StepIngredients onNext={nextToStep3} onBack={() => setCurrentStep(1)} onSaveDraft={() => handlePublish(false)} isPublishing={isPublishing} />}
                     {currentStep === 3 && <StepSteps onBack={() => setCurrentStep(2)} onPublish={handlePublish} isPublishing={isPublishing} isEditing={!!editId} />}
                 </div>

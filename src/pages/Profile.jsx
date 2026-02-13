@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSocial } from '../context/SocialContext';
 import { useBookmarks } from '../context/BookmarkContext';
 import EditProfileModal from '../components/profile/EditProfileModal';
+import UserListModal from '../components/profile/UserListModal';
 
 const Profile = () => {
     const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
@@ -12,7 +13,7 @@ const Profile = () => {
     const [activeTab, setActiveTab] = React.useState('my_recipes'); // 'my_recipes' | 'collection'
     const [stats, setStats] = React.useState({ followers: 0, following: 0, recipes: 0 });
     const { user, profile, loading, signOut } = useAuth();
-    const { fetchProfileStats } = useSocial();
+    const { fetchProfileStats, getFollowers, getFollowing } = useSocial();
     const { bookmarkedRecipeIds } = useBookmarks();
     const navigate = useNavigate();
 
@@ -53,32 +54,35 @@ const Profile = () => {
         const loadData = async () => {
             if (user?.id) {
                 // Guard: Don't refetch if already fetching or already fetched for this user
-                if (isFetchingStatsRef.current || lastFetchedUserIdRef.current === user.id) {
-                    return;
-                }
+                // Modified: We allow refetching if activeTab changes to 'collection' to ensure we get bookmarks
+                // But we still want to avoid double-fetching stats/myRecipes if possible.
+                // Simplified approach: rely on React's dependency array.
 
+                if (isFetchingStatsRef.current) return;
                 isFetchingStatsRef.current = true;
-                lastFetchedUserIdRef.current = user.id;
 
                 try {
-                    const { fetchUserRecipes } = await import('../lib/recipeService');
+                    const { fetchUserRecipes, fetchBookmarkedRecipes } = await import('../lib/recipeService');
 
-                    // 1. Fetch ALL User Recipes (all statuses: draft, pending, published, rejected)
-                    const myRecs = await fetchUserRecipes(user.id);
-                    setMyRecipes(myRecs);
+                    // 1. Fetch ALL User Recipes (all statuses) - Only if not yet loaded or we need to refresh
+                    if (myRecipes.length === 0 || lastFetchedUserIdRef.current !== user.id) {
+                        const myRecs = await fetchUserRecipes(user.id);
+                        setMyRecipes(myRecs);
+                        lastFetchedUserIdRef.current = user.id;
 
-                    // 2. Fetch consolidated stats (single request instead of 3 HEAD requests)
-                    const profileStats = await fetchProfileStats(user.id);
-                    setStats({
-                        ...profileStats,
-                        recipes: myRecs.length
-                    });
+                        // 2. Fetch stats only when fetching myRecipes
+                        const profileStats = await fetchProfileStats(user.id);
+                        setStats({
+                            ...profileStats,
+                            recipes: myRecs.length
+                        });
+                    }
 
-                    // 3. Load bookmarks if tab is collection (use cached context instead of re-fetching)
+                    // 3. Load bookmarks if tab is collection
+                    // FIX: Fetch actual bookmarks from DB, not just filtering my-recipes
                     if (activeTab === 'collection') {
-                        // Get recipes that are bookmarked from cached IDs
-                        const bookmarked = myRecs.filter(recipe => bookmarkedRecipeIds.has(recipe.id));
-                        setBookmarkedRecipes(bookmarked);
+                        const bookmarks = await fetchBookmarkedRecipes(user.id);
+                        setBookmarkedRecipes(bookmarks);
                     }
                 } catch (error) {
                     console.error('Error loading profile data:', error);
@@ -88,7 +92,7 @@ const Profile = () => {
             }
         };
         loadData();
-    }, [user, activeTab, fetchProfileStats, bookmarkedRecipeIds]);
+    }, [user, activeTab, fetchProfileStats]);
 
 
 
@@ -107,12 +111,34 @@ const Profile = () => {
         return null;
     }
 
-    // Use profile data or fallback to user metadata
     const displayName = profile?.full_name || user?.user_metadata?.full_name || 'Pengguna';
     const username = profile?.username || user?.user_metadata?.username || 'user';
     const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(displayName) + '&background=EA6A12&color=fff';
 
     const [selectedRecipe, setSelectedRecipe] = React.useState(null);
+    const [userListModal, setUserListModal] = React.useState({ isOpen: false, title: '', users: [], emptyMessage: '' });
+
+    const handleShowFollowers = async () => {
+        if (!user?.id) return;
+        const followers = await getFollowers(user.id);
+        setUserListModal({
+            isOpen: true,
+            title: 'Pengikut',
+            users: followers,
+            emptyMessage: 'Belum ada pengikut.'
+        });
+    };
+
+    const handleShowFollowing = async () => {
+        if (!user?.id) return;
+        const following = await getFollowing(user.id);
+        setUserListModal({
+            isOpen: true,
+            title: 'Mengikuti',
+            users: following,
+            emptyMessage: 'Belum mengikuti siapapun.'
+        });
+    };
 
     const handleRecipeClick = (e, recipe) => {
         // Detect mobile (simplified check, can be improved with hooks if needed)
@@ -150,15 +176,15 @@ const Profile = () => {
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-6 mt-6 pt-0 md:pt-6 md:border-t border-[#e7d9cf] dark:border-[#3a2e25] justify-around md:justify-start">
-                            <div className="flex flex-col items-center md:items-start gap-0.5 px-2">
+                            <button onClick={handleShowFollowers} className="flex flex-col items-center md:items-start gap-0.5 px-2 hover:opacity-70 transition-opacity text-left">
                                 <p className="text-text-main dark:text-white text-lg md:text-xl font-bold">{stats.followers}</p>
                                 <p className="text-text-sub dark:text-gray-500 text-xs md:text-sm">Pengikut</p>
-                            </div>
+                            </button>
                             <div className="w-px bg-[#e7d9cf] dark:bg-[#3a2e25] h-10 mx-2 hidden md:block"></div>
-                            <div className="flex flex-col items-center md:items-start gap-0.5 px-2">
+                            <button onClick={handleShowFollowing} className="flex flex-col items-center md:items-start gap-0.5 px-2 hover:opacity-70 transition-opacity text-left">
                                 <p className="text-text-main dark:text-white text-lg md:text-xl font-bold">{stats.following}</p>
                                 <p className="text-text-sub dark:text-gray-500 text-xs md:text-sm">Mengikuti</p>
-                            </div>
+                            </button>
                             <div className="w-px bg-[#e7d9cf] dark:bg-[#3a2e25] h-10 mx-2 hidden md:block"></div>
                             <div className="flex flex-col items-center md:items-start gap-0.5 px-2">
                                 <p className="text-text-main dark:text-white text-lg md:text-xl font-bold">{stats.recipes}</p>
@@ -223,10 +249,7 @@ const Profile = () => {
                                             </div>
                                             <div className="px-1">
                                                 <h3 className="text-text-main dark:text-white text-sm md:text-base font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">{recipe.title}</h3>
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <span className="material-symbols-outlined text-[14px] text-yellow-500">star</span>
-                                                    <span className="text-xs font-medium text-text-sub dark:text-gray-400">4.8</span>
-                                                </div>
+                                                {/* Rating removed per request */}
                                             </div>
                                         </Link>
 
@@ -290,6 +313,14 @@ const Profile = () => {
                 onClose={() => setIsEditModalOpen(false)}
             />
 
+            <UserListModal
+                isOpen={userListModal.isOpen}
+                onClose={() => setUserListModal(prev => ({ ...prev, isOpen: false }))}
+                title={userListModal.title}
+                users={userListModal.users}
+                emptyMessage={userListModal.emptyMessage}
+            />
+
             {/* Mobile Action Sheet */}
             {selectedRecipe && (
                 <div className="fixed inset-0 z-50 flex items-end justify-center md:hidden" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setSelectedRecipe(null)}>
@@ -309,7 +340,7 @@ const Profile = () => {
                                 Lihat Resep
                             </button>
 
-                            {activeTab === 'my_recipes' && selectedRecipe.status !== 'published' && (
+                            {activeTab === 'my_recipes' && ['draft', 'rejected', 'pending'].includes(selectedRecipe.status) && (
                                 <button
                                     onClick={() => navigate(`/recipe/${selectedRecipe.id}/edit`)}
                                     className="w-full py-3.5 bg-gray-100 dark:bg-white/5 text-text-main dark:text-white rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"

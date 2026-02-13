@@ -23,6 +23,7 @@ const RecipeDetail = () => {
     const [userIsFollowing, setUserIsFollowing] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
     const [comments, setComments] = useState([]);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
     // Ref to prevent duplicate fetch on mount (React StrictMode safety)
     const lastFetchedRecipeIdRef = React.useRef(null);
@@ -291,9 +292,20 @@ const RecipeDetail = () => {
                             <h1 className="text-3xl md:text-4xl font-extrabold text-text-main dark:text-white leading-tight mb-4">
                                 {recipe.title}
                             </h1>
-                            <p className="text-text-secondary dark:text-gray-400 text-sm md:text-base mb-6 line-clamp-6 leading-relaxed">
-                                {recipe.description || 'Tidak ada deskripsi.'}
-                            </p>
+
+                            <div className="relative mb-6">
+                                <p className={`text-text-secondary dark:text-gray-400 text-sm md:text-base leading-relaxed ${!isDescriptionExpanded ? 'line-clamp-4' : ''}`}>
+                                    {recipe.description || 'Tidak ada deskripsi.'}
+                                </p>
+                                {(recipe.description && recipe.description.length > 150) && (
+                                    <button
+                                        onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                                        className="mt-2 text-primary font-bold text-sm hover:underline focus:outline-none"
+                                    >
+                                        {isDescriptionExpanded ? 'Sembunyikan' : 'Selengkapnya'}
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Author Info */}

@@ -112,8 +112,8 @@ export const SocialProvider = ({ children }) => {
             if (next[userId]) {
                 next[userId] = {
                     ...next[userId],
-                    followers: isFollowing 
-                        ? next[userId].followers + 1 
+                    followers: isFollowing
+                        ? next[userId].followers + 1
                         : Math.max(0, next[userId].followers - 1)
                 };
             }
@@ -132,12 +132,64 @@ export const SocialProvider = ({ children }) => {
         }
     }, [user?.id, fetchFollowingStatus]);
 
+    // Fetch list of followers for a user
+    const getFollowers = useCallback(async (userId) => {
+        if (!userId) return [];
+        try {
+            const { supabase } = await import('../lib/supabaseClient');
+            const { data, error } = await supabase
+                .from('followers')
+                .select(`
+                    follower:follower_id (
+                        id,
+                        username,
+                        full_name,
+                        avatar_url
+                    )
+                `)
+                .eq('following_id', userId);
+
+            if (error) throw error;
+            return data.map(item => item.follower);
+        } catch (error) {
+            console.error('Error fetching followers:', error);
+            return [];
+        }
+    }, []);
+
+    // Fetch list of following for a user
+    const getFollowing = useCallback(async (userId) => {
+        if (!userId) return [];
+        try {
+            const { supabase } = await import('../lib/supabaseClient');
+            const { data, error } = await supabase
+                .from('followers')
+                .select(`
+                    following:following_id (
+                        id,
+                        username,
+                        full_name,
+                        avatar_url
+                    )
+                `)
+                .eq('follower_id', userId);
+
+            if (error) throw error;
+            return data.map(item => item.following);
+        } catch (error) {
+            console.error('Error fetching following:', error);
+            return [];
+        }
+    }, []);
+
     const value = {
         followingSet,
         isFollowing,
         updateFollowingStatus,
         fetchProfileStats,
-        profileStatsCache
+        profileStatsCache,
+        getFollowers,
+        getFollowing
     };
 
     return (

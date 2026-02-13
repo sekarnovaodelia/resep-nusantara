@@ -5,6 +5,7 @@ import { RecipeProvider } from './context/RecipeContext';
 import { SocialProvider } from './context/SocialContext';
 import { BookmarkProvider } from './context/BookmarkContext';
 import { NotificationProvider } from './context/NotificationContext';
+import ScrollToTop from './components/ScrollToTop';
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
 import Footer from './components/Footer';
@@ -45,6 +46,7 @@ const App = () => {
           <BookmarkProvider>
             <NotificationProvider>
               <Router>
+                <ScrollToTop />
                 <MainLayout darkMode={darkMode} setDarkMode={setDarkMode} />
               </Router>
             </NotificationProvider>

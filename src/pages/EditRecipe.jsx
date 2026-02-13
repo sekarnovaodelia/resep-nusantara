@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useRecipe } from '../context/RecipeContext';
-import { getRecipeForEdit, updateRecipe } from '../lib/recipeService';
+import { getRecipeForEdit, updateRecipe, fetchRegions } from '../lib/recipeService';
 
 const EditRecipe = () => {
     const { id } = useParams();
@@ -19,12 +19,17 @@ const EditRecipe = () => {
     // Form data
     const [title, setTitle] = React.useState('');
     const [description, setDescription] = React.useState('');
-    
+    const [regionId, setRegionId] = React.useState(null);
+
+    // Regions Data
+    const [regions, setRegions] = React.useState([]);
+    const [loadingRegions, setLoadingRegions] = React.useState(true);
+
     const [mainImageFile, setMainImageFile] = React.useState(null);
     const [mainImagePreview, setMainImagePreview] = React.useState('');
     const [ingredients, setIngredients] = React.useState([]);
     const [steps, setSteps] = React.useState([]);
-    
+
 
     // =============== FETCH RECIPE DATA ===============
     React.useEffect(() => {
@@ -60,7 +65,8 @@ const EditRecipe = () => {
                 setRecipe(data);
                 setTitle(data.title);
                 setDescription(data.description || '');
-                
+                setRegionId(data.region_id || null);
+
                 setMainImagePreview(data.main_image_url || '');
                 // Map ingredients to include imageFile + imagePreview for UI
                 setIngredients(
@@ -82,7 +88,7 @@ const EditRecipe = () => {
                         imagePreview: step.image_url || ''
                     }))
                 );
-                
+
 
                 setError(null);
             } catch (err) {
@@ -94,7 +100,18 @@ const EditRecipe = () => {
         };
 
         loadRecipe();
+        loadRecipe();
     }, [user, id, navigate]);
+
+    // Load Regions
+    React.useEffect(() => {
+        const loadRegions = async () => {
+            const data = await fetchRegions();
+            setRegions(data);
+            setLoadingRegions(false);
+        };
+        loadRegions();
+    }, []);
 
     // =============== HANDLE IMAGE CHANGE ===============
     const handleMainImageChange = (e) => {
@@ -220,7 +237,7 @@ const EditRecipe = () => {
             }, 1500);
         } catch (err) {
             console.error('Error saving recipe:', err);
-            
+
             // Check for specific RLS errors
             if (err.message?.includes('row-level security')) {
                 setError('Anda tidak memiliki izin untuk mengedit resep ini');
@@ -504,10 +521,22 @@ const EditRecipe = () => {
                         ))}
                     </div>
 
-                    {/* Tags */}
+                    {/* Region (Replaces Tags) */}
                     <div className="flex flex-col gap-2 mb-6">
-                        <label className="font-bold text-text-main dark:text-white">Tags (dipisahkan koma)</label>
-                        {/* Tags removed per request */}
+                        <label className="font-bold text-text-main dark:text-white">Asal Daerah</label>
+                        <div className="flex flex-wrap gap-2">
+                            {loadingRegions ? <span className="text-sm">Memuat...</span> :
+                                regions.map(r => (
+                                    <button
+                                        key={r.id}
+                                        onClick={() => setRegionId(regionId === r.id ? null : r.id)}
+                                        className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${regionId === r.id ? 'border-primary bg-primary/10 text-primary font-bold' : 'border-border-light dark:border-border-dark'}`}
+                                    >
+                                        {r.name}
+                                    </button>
+                                ))
+                            }
+                        </div>
                     </div>
 
                     {/* Action Buttons */}
