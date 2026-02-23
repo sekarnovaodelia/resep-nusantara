@@ -78,7 +78,7 @@ const Login = () => {
             </div>
 
             {/* Right Column: Login Form */}
-            <div className="flex w-full lg:w-1/2 flex-col justify-center items-center px-6 py-12 lg:px-20 xl:px-24 bg-background-light dark:bg-background-dark relative">
+            <div className="flex w-full lg:w-1/2 flex-col justify-start lg:justify-center items-center px-6 pt-16 pb-8 lg:py-12 lg:px-20 xl:px-24 bg-background-light dark:bg-background-dark relative">
                 {/* Mobile Background Pattern (Optional subtle texture) */}
                 <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none animate-pulse-slow">
                     <span className="material-symbols-outlined text-9xl text-primary">skillet</span>

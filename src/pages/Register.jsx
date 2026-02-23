@@ -79,11 +79,14 @@ const Register = () => {
             {/* Left Column: Atmospheric Image */}
             {/* Hidden on mobile/tablet, visible on desktop */}
             <div className="hidden lg:flex lg:w-1/2 relative bg-surface-dark items-center justify-center overflow-hidden">
-                <div
-                    className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 ease-in-out hover:scale-105"
-                    style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCvIPZXPn6BmiPx15ewiJcEePyQSIPmfQb9ZXMZm7LRJvcIz3-uGC7aev58qkgqbL4wCUDRESMGtq55XELwU9x4w9cVFNDfWHuAluDLaDZQXHskfepKRIwGqRpJefZ3HSIjl40EjSN0AkUB8qTdMrzeiHTp2HbLCB3sWsJjecxhQuSlLAB67A_cYomVSZIQqFDQhvOpM47GKbLxP2O22EVganSbokU62qY40Cos0Wmhi1mvCmt7fSQkTzuXf0h7PoFIhnNoWdYA1R-Q')" }}
-                >
-                </div>
+                <img
+            src="https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/hero/register.webp"
+            alt="hero"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-in-out hover:scale-105"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+                />
                 {/* Overlay for atmosphere */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#221810]/90 via-[#221810]/40 to-transparent"></div>
                 <div className="relative z-10 p-16 w-full max-w-xl self-end mb-20 animate-fade-in-up">
@@ -98,7 +101,7 @@ const Register = () => {
             </div>
 
             {/* Right Column: Register Form */}
-            <div className="flex w-full lg:w-1/2 flex-col justify-center items-center px-6 py-12 lg:px-20 xl:px-24 bg-background-light dark:bg-background-dark relative">
+            <div className="flex w-full lg:w-1/2 flex-col justify-start lg:justify-center items-center px-6 pt-16 pb-8 lg:py-12 lg:px-20 xl:px-24 bg-background-light dark:bg-background-dark relative">
                 {/* Mobile Background Pattern (Optional subtle texture) */}
                 <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none animate-pulse-slow">
                     <span className="material-symbols-outlined text-9xl text-primary">skillet</span>
