@@ -222,13 +222,19 @@ const Community = () => {
                         <div className="flex gap-4">
                             <div className="size-10 rounded-full bg-cover bg-center flex-shrink-0" data-alt="User avatar" style={{ backgroundImage: `url("${avatarUrl}")` }}></div>
                             <div className="flex-grow">
-                                <input
-                                    className="w-full bg-[#f8f7f6] dark:bg-[#221810] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 text-text-main dark:text-white placeholder-gray-400 outline-none"
-                                    placeholder="Punya tips masak atau resep baru?"
-                                    type="text"
-                                    value={newPostText}
-                                    onChange={(e) => setNewPostText(e.target.value)}
-                                />
+                                {!user ? (
+                                    <div className="w-full bg-[#f8f7f6] dark:bg-[#221810] border-none rounded-xl px-4 py-3 text-sm text-text-secondary dark:text-gray-400">
+                                        Silakan <Link to="/login" className="text-primary hover:underline font-bold">login</Link> untuk membagikan resep atau tips masak
+                                    </div>
+                                ) : (
+                                    <input
+                                        className="w-full bg-[#f8f7f6] dark:bg-[#221810] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 text-text-main dark:text-white placeholder-gray-400 outline-none"
+                                        placeholder="Punya tips masak atau resep baru?"
+                                        type="text"
+                                        value={newPostText}
+                                        onChange={(e) => setNewPostText(e.target.value)}
+                                    />
+                                )}
                             </div>
                         </div>
 

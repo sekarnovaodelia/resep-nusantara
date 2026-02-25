@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { RecipeProvider } from './context/RecipeContext';
 import { SocialProvider } from './context/SocialContext';
@@ -25,6 +25,7 @@ import PostDetail from './pages/PostDetail';
 import NotificationPage from './pages/NotificationPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminRoute from './components/admin/AdminRoute';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -87,6 +88,7 @@ const AppContent = ({ darkMode, setDarkMode }) => {
       <main className={`flex-1 ${!isAuthPage ? 'pb-20 lg:pb-0' : ''}`}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Navigate replace to="/" />} />
           <Route path="/recipe/:id" element={<RecipeDetail />} />
           <Route path="/recipe/:id/cook" element={<CookingMode />} />
           <Route path="/planner" element={<Planner />} />
@@ -95,10 +97,10 @@ const AppContent = ({ darkMode, setDarkMode }) => {
           <Route path="/post/:id" element={<PostDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/public-profile" element={<PublicProfile />} />
-          <Route path="/upload-recipe" element={<UploadRecipe />} />
-          <Route path="/recipe/:id/edit" element={<EditRecipe />} />
+          <Route path="/upload-recipe" element={<ProtectedRoute><UploadRecipe /></ProtectedRoute>} />
+          <Route path="/recipe/:id/edit" element={<ProtectedRoute><EditRecipe /></ProtectedRoute>} />
           <Route path="/notifications" element={<NotificationPage />} />
           <Route
             path="/admin"

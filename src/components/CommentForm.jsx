@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { postComment } from '../lib/interactionService';
 
@@ -36,7 +37,9 @@ const CommentForm = ({ recipeId, postId, parentId = null, onSuccess, onCancel, a
     if (!user) {
         return (
             <div className="p-4 bg-gray-50 dark:bg-accent-dark/30 rounded-xl text-center border border-dashed border-gray-300">
-                <p className="text-sm text-text-secondary">Silakan login untuk berkomentar</p>
+                <p className="text-sm text-text-secondary">
+                    Silakan <Link to="/login" className="text-primary hover:underline font-bold">login</Link> untuk berkomentar
+                </p>
             </div>
         );
     }
