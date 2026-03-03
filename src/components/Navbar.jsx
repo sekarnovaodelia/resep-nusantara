@@ -42,7 +42,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                 setIsProfileOpen(false);
             }
 
-            if (isSearchModalOpen || isMobileSearchOpen) {
+            if (isSearchModalOpen) {
                 const isInsideDesktop = searchRef.current?.contains(event.target);
                 const isToggleBtn = event.target.closest('.search-toggle-btn');
 

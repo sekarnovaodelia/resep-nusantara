@@ -3,11 +3,11 @@ import React, { useEffect, useRef } from 'react';
 const SearchMobileModal = ({ isOpen, onClose, searchQuery, setSearchQuery, onSearch }) => {
     const inputRef = useRef(null);
     const trendingSearches = [
-        'Nasi Goreng',
-        'Sate Ayam',
-        'Rendang Sapi',
-        'Soto Betawi',
-        'Gado-gado'
+        'Soto Ayam',
+        'Seblak',
+        'Ketoprak',
+        'Sate Lilit',
+        'Gulai Tunjang'
     ];
 
     useEffect(() => {

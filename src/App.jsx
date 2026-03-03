@@ -13,7 +13,6 @@ import Home from './pages/Home';
 import RecipeDetail from './pages/RecipeDetail';
 import CookingMode from './pages/CookingMode';
 import Planner from './pages/Planner';
-import ShoppingList from './pages/ShoppingList';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -92,7 +91,6 @@ const AppContent = ({ darkMode, setDarkMode }) => {
           <Route path="/recipe/:id" element={<RecipeDetail />} />
           <Route path="/recipe/:id/cook" element={<CookingMode />} />
           <Route path="/planner" element={<Planner />} />
-          <Route path="/shopping-list" element={<ShoppingList />} />
           <Route path="/community" element={<Community />} />
           <Route path="/post/:id" element={<PostDetail />} />
           <Route path="/login" element={<Login />} />
