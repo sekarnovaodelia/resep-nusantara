@@ -177,7 +177,7 @@ const Login = () => {
 
                 {/* Footer Rights */}
                 <div className="absolute bottom-6 text-xs text-text-sub-light dark:text-text-sub-dark/50 hidden lg:block hover:text-text-sub-light transition-colors cursor-default">
-                    © 2024 Resep Nusantara. All rights reserved.
+                    © 2026 Resep Nusantara. All rights reserved.
                 </div>
             </div>
         </div>

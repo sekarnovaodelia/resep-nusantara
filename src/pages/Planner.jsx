@@ -155,7 +155,7 @@ const DroppableMealSlot = ({ title, icon, slotId, currentRecipe, onRemove, onAdd
                                 e.stopPropagation();
                                 onRemove();
                             }}
-                            className="absolute top-2 right-2 p-1.5 bg-white/90 dark:bg-black/50 rounded-full text-[#9a6c4c] dark:text-white hover:text-red-500 transition-colors z-10 opacity-0 group-hover:opacity-100"
+                            className="absolute top-2 right-2 p-1.5 bg-white/90 dark:bg-black/50 rounded-full text-[#9a6c4c] dark:text-white hover:text-red-500 transition-colors z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
                         >
                             <span className="material-symbols-outlined text-sm">close</span>
                         </button>

@@ -11,11 +11,10 @@ const NotificationPage = () => {
 
     useEffect(() => {
         if (!user) {
-            navigate('/login');
             return;
         }
         loadNotifications();
-    }, [user, navigate, loadNotifications]);
+    }, [user, loadNotifications]);
 
     const handleMarkAllRead = async () => {
         await markAllRead();
@@ -150,6 +149,37 @@ const NotificationPage = () => {
             </div>
         );
     };
+
+    if (!user) {
+        return (
+            <main className="flex-grow w-full max-w-[900px] mx-auto px-4 py-8 md:py-12 pb-24">
+                {/* Page Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 px-2">
+                    <div>
+                        <h1 className="text-3xl font-bold text-text-main dark:text-white tracking-tight">Notifikasi</h1>
+                        <p className="text-text-secondary dark:text-gray-400 mt-1">Pantau interaksi terbaru di dapur sosialmu.</p>
+                    </div>
+                </div>
+
+                {/* Login Prompt Card Container */}
+                <div className="bg-white dark:bg-[#1a1c20] rounded-xl shadow-sm border border-border-light dark:border-gray-800 overflow-hidden">
+                    <div className="p-10 text-center flex flex-col items-center justify-center">
+                        <span className="material-symbols-outlined text-primary text-6xl mb-4">login</span>
+                        <h2 className="text-xl font-bold text-text-main dark:text-white mb-2">Login Diperlukan</h2>
+                        <p className="text-text-secondary dark:text-gray-400 mb-6 max-w-md">
+                            Silakan masuk untuk melihat notifikasi interaksi dari resepmu, komentar, dan aktivitas menarik lainnya!
+                        </p>
+                        <button
+                            onClick={() => navigate('/login')}
+                            className="flex items-center justify-center rounded-lg h-11 px-8 bg-primary hover:bg-orange-600 text-white font-bold transition-colors shadow-sm"
+                        >
+                            Masuk Sekarang
+                        </button>
+                    </div>
+                </div>
+            </main>
+        );
+    }
 
     if (loading) {
         return (

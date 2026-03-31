@@ -56,7 +56,7 @@ const FeedCard = ({
         const previousCount = likeCount;
 
         setIsLiked(!previousLiked);
-        setLikeCount(prev => previousLiked ? prev - 1 : prev + 1);
+        setLikeCount(prev => previousLiked ? Math.max(0, prev - 1) : prev + 1);
         setLikeLoading(true);
 
         try {

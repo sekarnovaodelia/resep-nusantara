@@ -112,7 +112,7 @@ const Home = () => {
                                     Nasi Liwet <span className="text-primary">Khas Sunda</span>
                                 </h1>
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-cover bg-center ring-2 ring-white" style={{ backgroundImage: 'url("https://ui-avatars.com/api/?name=AT&background=EA6A12&color=fff")' }}></div>
+                                    <img src="https://ui-avatars.com/api/?name=AT&background=EA6A12&color=fff" alt="Ataa" className="w-8 h-8 rounded-full ring-2 ring-white object-cover" loading="lazy" />
                                     <p className="text-sm font-medium text-text-main dark:text-white">Oleh <span className="text-primary font-bold">Ataa</span></p>
                                 </div>
                                 <p className="text-text-secondary dark:text-gray-200 text-lg font-normal leading-relaxed">
@@ -128,7 +128,14 @@ const Home = () => {
                         </div>
                         <div className="w-full lg:w-1/2 relative group">
                             <div className="absolute inset-0 bg-black/10 rounded-2xl rotate-3 transform transition-transform group-hover:rotate-6"></div>
-                            <div className="w-full h-full min-h-[300px] lg:min-h-[400px] bg-center bg-no-repeat bg-cover rounded-2xl shadow-xl relative z-10" style={{ backgroundImage: `url('${getOptimizedImageUrl("https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770187319968_jeb9z.jpg", { width: 1000 })}')` }}>
+                            <div className="relative w-full min-h-[300px] lg:min-h-[400px] rounded-2xl shadow-xl overflow-hidden z-10">
+                                <img
+                                    src={getOptimizedImageUrl("https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770187319968_jeb9z.jpg", { width: 1000 })}
+                                    alt="Nasi Liwet Khas Sunda - Resep Nusantara"
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                    loading="eager"
+                                    fetchPriority="high"
+                                />
                                 <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-black/80 backdrop-blur px-4 py-2 rounded-lg shadow-lg">
                                     <span className="text-xs font-bold uppercase tracking-wider text-orange-500">Paling Dicari</span>
                                 </div>
@@ -184,7 +191,7 @@ const Home = () => {
                                 },
                             ].map((chefRec, idx) => (
                                 <div key={idx} onClick={() => navigate(`/recipe/${chefRec.id}`)} className="flex gap-3 items-center group cursor-pointer hover:opacity-80 transition-all">
-                                    <div className="w-10 h-10 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: `url("${chefRec.img}")` }}></div>
+                                    <img src={chefRec.img} alt={chefRec.title} className="w-10 h-10 rounded-lg shrink-0 object-cover" loading="lazy" />
                                     <div className="flex flex-col w-32 lg:w-40">
                                         <h4 className="text-text-main dark:text-white font-bold text-xs leading-tight truncate">{chefRec.title}</h4>
                                         <span className="text-[10px] text-text-secondary">Coba sekarang</span>
@@ -204,7 +211,7 @@ const Home = () => {
                                 {recipes.map((recipe) => (
                                     <div onClick={() => navigate(`/recipe/${recipe.id}`)} key={recipe.id} className="group flex flex-col gap-2 cursor-pointer relative">
                                         <div className="w-full overflow-hidden rounded-xl aspect-square relative shadow-sm border border-gray-100 dark:border-gray-800">
-                                            <div className="w-full h-full bg-center bg-no-repeat bg-cover transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url("${recipe.main_image_url || 'https://placehold.co/600x400'}")` }}></div>
+                                            <img src={recipe.main_image_url || 'https://placehold.co/600x400'} alt={recipe.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
                                             {recipe.regions?.name && (
                                                 <div className="absolute top-2 left-2">
                                                     <span className="bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-text-main dark:text-white shadow-sm">{recipe.regions.name}</span>
@@ -231,7 +238,7 @@ const Home = () => {
                                                     onClick={(e) => e.stopPropagation()}
                                                     className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
                                                 >
-                                                    <div className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 bg-cover bg-center shrink-0" style={{ backgroundImage: `url("${recipe.user_profiles?.avatar_url || 'https://placehold.co/100x100'}")` }}></div>
+                                                    <img src={recipe.user_profiles?.avatar_url || 'https://placehold.co/100x100'} alt={recipe.user_profiles?.full_name || 'Chef'} className="w-4 h-4 rounded-full shrink-0 object-cover" loading="lazy" />
                                                     <p className="text-[10px] md:text-xs text-text-sub dark:text-gray-400 font-medium truncate max-w-[80px] md:max-w-none hover:underline">
                                                         {recipe.user_profiles?.full_name || 'Chef'}
                                                     </p>

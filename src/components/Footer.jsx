@@ -5,19 +5,19 @@ const Footer = () => {
     const team = [
         {
             name: "Sekar Nova",
-            img: "/team/sekar1.jpeg",
+            img: "/team/sekar1.webp",
         },
         {
             name: "Arista Vania",
-            img: "/team/arista.jpeg",
+            img: "/team/arista.webp",
         },
         {
             name: "Syamil ikhsan",
-            img: "/team/samil.jpeg",
+            img: "/team/samil.webp",
         },
         {
             name: "Atha Yan",
-            img: "/team/atha.jpeg",
+            img: "/team/atha.webp",
         },
     ];
 

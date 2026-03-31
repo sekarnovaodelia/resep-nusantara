@@ -110,7 +110,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                 <nav className="hidden lg:flex items-center gap-6">
                     <NavLink className={navLinkClass} to="/">Home</NavLink>
                     <NavLink className={navLinkClass} to="/planner">Planner</NavLink>
-                    <NavLink className={navLinkClass} to="/community">Community</NavLink>
+                    <NavLink className={navLinkClass} to="/community">Komunitas</NavLink>
                 </nav>
             </div>
 
