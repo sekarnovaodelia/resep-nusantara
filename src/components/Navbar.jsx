@@ -140,7 +140,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2 sm:gap-4 relative ml-auto sm:ml-0">
+            <div className="flex items-center gap-2 sm:gap-4 relative ml-auto sm:ml-0 min-h-[40px]">
                 {/* Search Toggle Button (Mobile) */}
                 <button
                     onClick={() => setIsMobileSearchOpen(true)}

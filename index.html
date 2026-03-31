@@ -5,10 +5,23 @@
   <meta charset="utf-8" />
   <meta content="width=device-width, initial-scale=1.0" name="viewport" />
   <title>Resep Nusantara</title>
-  <link href="https://fonts.googleapis.com" rel="preconnect" />
-  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+
+  <!-- Preconnect to critical origins -->
+  <link rel="preconnect" href="https://weghbluslrzbkrzfuofu.supabase.co" crossorigin />
+  <link rel="preconnect" href="https://ui-avatars.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Preload LCP hero image -->
+  <link rel="preload" as="image" href="https://weghbluslrzbkrzfuofu.supabase.co/storage/v1/object/public/recipes/main/1770187319968_jeb9z.jpg?width=1000&quality=80" />
+
+  <!-- Load Material Symbols asynchronously (non-render-blocking) -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-    rel="stylesheet" />
+    rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  </noscript>
 
 </head>
 

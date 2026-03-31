@@ -42,19 +42,33 @@ const Home = () => {
         }
     };
 
-    // Fetch regions on mount
+    // Fetch regions + initial recipes in parallel on mount
+    // Re-fetch recipes when search or region changes
     useEffect(() => {
-        const loadRegions = async () => {
-            const data = await fetchRegions();
-            setRegions(data);
-        };
-        loadRegions();
-    }, []);
+        const loadInitialData = async () => {
+            setPage(0);
+            setLoading(true);
+            try {
+                const [regionsData, recipesResult] = await Promise.all([
+                    regions.length === 0 ? fetchRegions() : Promise.resolve(regions),
+                    fetchRecipes({
+                        searchQuery,
+                        regionId: selectedRegionId,
+                        limit: LIMIT,
+                        page: 0
+                    })
+                ]);
 
-    // Fetch recipes when search or region changes
-    useEffect(() => {
-        setPage(0);
-        loadRecipes(0);
+                if (regions.length === 0) setRegions(regionsData);
+                setRecipes(recipesResult.data);
+                setTotalRecipes(recipesResult.count || 0);
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadInitialData();
     }, [searchQuery, selectedRegionId]);
 
     const loadRecipes = async (pageNum) => {
@@ -191,7 +205,7 @@ const Home = () => {
                                 },
                             ].map((chefRec, idx) => (
                                 <div key={idx} onClick={() => navigate(`/recipe/${chefRec.id}`)} className="flex gap-3 items-center group cursor-pointer hover:opacity-80 transition-all">
-                                    <img src={chefRec.img} alt={chefRec.title} className="w-10 h-10 rounded-lg shrink-0 object-cover" loading="lazy" />
+                                    <img src={getOptimizedImageUrl(chefRec.img, { width: 100 })} alt={chefRec.title} className="w-10 h-10 rounded-lg shrink-0 object-cover" loading="lazy" />
                                     <div className="flex flex-col w-32 lg:w-40">
                                         <h4 className="text-text-main dark:text-white font-bold text-xs leading-tight truncate">{chefRec.title}</h4>
                                         <span className="text-[10px] text-text-secondary">Coba sekarang</span>
@@ -211,7 +225,7 @@ const Home = () => {
                                 {recipes.map((recipe) => (
                                     <div onClick={() => navigate(`/recipe/${recipe.id}`)} key={recipe.id} className="group flex flex-col gap-2 cursor-pointer relative">
                                         <div className="w-full overflow-hidden rounded-xl aspect-square relative shadow-sm border border-gray-100 dark:border-gray-800">
-                                            <img src={recipe.main_image_url || 'https://placehold.co/600x400'} alt={recipe.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                                            <img src={getOptimizedImageUrl(recipe.main_image_url, { width: 400 }) || 'https://placehold.co/600x400'} alt={recipe.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
                                             {recipe.regions?.name && (
                                                 <div className="absolute top-2 left-2">
                                                     <span className="bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-text-main dark:text-white shadow-sm">{recipe.regions.name}</span>
@@ -238,7 +252,7 @@ const Home = () => {
                                                     onClick={(e) => e.stopPropagation()}
                                                     className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
                                                 >
-                                                    <img src={recipe.user_profiles?.avatar_url || 'https://placehold.co/100x100'} alt={recipe.user_profiles?.full_name || 'Chef'} className="w-4 h-4 rounded-full shrink-0 object-cover" loading="lazy" />
+                                                    <img src={getOptimizedImageUrl(recipe.user_profiles?.avatar_url, { width: 64 }) || 'https://placehold.co/100x100'} alt={recipe.user_profiles?.full_name || 'Chef'} className="w-4 h-4 rounded-full shrink-0 object-cover" loading="lazy" />
                                                     <p className="text-[10px] md:text-xs text-text-sub dark:text-gray-400 font-medium truncate max-w-[80px] md:max-w-none hover:underline">
                                                         {recipe.user_profiles?.full_name || 'Chef'}
                                                     </p>
